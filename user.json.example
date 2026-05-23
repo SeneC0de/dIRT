@@ -1,0 +1,9 @@
+{
+  "_about": "Per-machine User identity. Used for scoring/leaderboard + Director addressing.",
+  "name": "REPLACE_ME",
+  "email": "REPLACE_ME@dappcontrols.com",
+  "_examples": [
+    {"name": "Randall", "email": "rwilliford@dappcontrols.com"},
+    {"name": "Matt",    "email": "mbarley@dappcontrols.com"}
+  ]
+}

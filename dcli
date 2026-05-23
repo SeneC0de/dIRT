@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# dcli - canonical CLI shim. Forwards to agent_cli.py at this script's directory.
+# Preserves cwd so agent_cli.py reads the right project.json.
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec python3 "$DIR/agent_cli.py" "$@"

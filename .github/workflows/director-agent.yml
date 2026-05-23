@@ -1,0 +1,172 @@
+name: Director Agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      intent:
+        description: 'Message from the user'
+        required: true
+        type: string
+      director_id:
+        required: true
+        type: string
+      director_name:
+        required: true
+        type: string
+      thread_id:
+        required: true
+        type: string
+      from_name:
+        required: true
+        type: string
+      adr_id:
+        description: 'Pre-reserved ADR Firestore id (set by the Cloud Function for drafter intents). Empty for coder runs.'
+        required: false
+        type: string
+        default: ''
+      adr_number:
+        description: 'Pre-reserved ADR number (set with adr_id).'
+        required: false
+        type: string
+        default: ''
+
+env:
+  # Shared CLI configuration — used by every script that touches Firestore.
+  FIRESTORE_PROJECT_ID: dapp-controls-internal
+  FIRESTORE_DATABASE:   prj-tracker
+  FIREBASE_SA_FILE:     /tmp/firebase-sa.json
+  DIRECTOR_ID:          ${{ inputs.director_id }}
+  DIRECTOR_NAME:        ${{ inputs.director_name }}
+  ADR_ID:               ${{ inputs.adr_id }}
+  ADR_NUMBER:           ${{ inputs.adr_number }}
+
+jobs:
+  agent:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python deps
+        run: pip install google-auth requests -q
+
+      - name: Write Firebase credentials to file
+        env:
+          FIREBASE_SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: printf '%s' "$FIREBASE_SA_JSON" > /tmp/firebase-sa.json
+
+      - name: Fetch board context
+        run: python .github/scripts/fetch_context.py
+
+      - name: Detect head type
+        id: detect
+        run: |
+          if echo "${{ inputs.intent }}" | grep -qiE 'execute|implement|build'; then
+            echo "head_type=coder" >> "$GITHUB_OUTPUT"
+          else
+            echo "head_type=drafter" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Prepare drafter brief
+        if: steps.detect.outputs.head_type == 'drafter'
+        env:
+          INTENT: ${{ inputs.intent }}
+        run: python .github/scripts/prepare_drafter_brief.py
+
+      - name: Run drafter head (Sonnet)
+        if: steps.detect.outputs.head_type == 'drafter'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_args: --model claude-sonnet-4-6 --max-turns 50
+          show_full_output: true
+          settings: >-
+            {"env": {
+              "FIREBASE_SA_FILE": "/tmp/firebase-sa.json",
+              "FIRESTORE_PROJECT_ID": "dapp-controls-internal",
+              "FIRESTORE_DATABASE":   "prj-tracker",
+              "DIRECTOR_ID":   "${{ inputs.director_id }}",
+              "DIRECTOR_NAME": "${{ inputs.director_name }}"
+            },
+            "permissions": {"allow": [
+              "Read", "Write", "Edit", "Glob", "Grep",
+              "Bash(git *)",
+              "Bash(gh *)",
+              "Bash(python *)",
+              "Bash(python3 *)",
+              "Bash(printf *)",
+              "Bash(date *)",
+              "Bash(mkdir *)"
+            ]}}
+          prompt: |
+            Your first action MUST be a single message making these two Read tool calls in parallel:
+              - Read drafter_brief.md
+              - Read .claude/skills/write-adr/SKILL.md
+
+            The brief has your reserved ADR number, the user request, and project context. The skill file has your procedure and stop conditions. Follow the skill exactly — it tells you which files to read in parallel next, when to stop, and what NOT to do.
+
+      - name: Post-drafter board updates
+        if: always() && steps.detect.outputs.head_type == 'drafter'
+        run: python .github/scripts/post_drafter_steps.py
+
+      - name: Run coder head (Sonnet)
+        if: steps.detect.outputs.head_type == 'coder'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_args: --model claude-sonnet-4-6 --max-turns 50
+          show_full_output: true
+          settings: >-
+            {"env": {
+              "FIREBASE_SA_FILE": "/tmp/firebase-sa.json",
+              "FIRESTORE_PROJECT_ID": "dapp-controls-internal",
+              "FIRESTORE_DATABASE":   "prj-tracker",
+              "DIRECTOR_ID":   "${{ inputs.director_id }}",
+              "DIRECTOR_NAME": "${{ inputs.director_name }}"
+            },
+            "permissions": {"allow": [
+              "Read", "Write", "Edit", "Glob", "Grep",
+              "Bash(git *)",
+              "Bash(gh *)",
+              "Bash(python *)",
+              "Bash(python3 *)",
+              "Bash(printf *)",
+              "Bash(date *)",
+              "Bash(mkdir *)",
+              "Bash(dotnet *)",
+              "Bash(pytest *)",
+              "Bash(npm *)"
+            ]}}
+          prompt: |
+            You are an execution Head for the ${{ inputs.director_id }} project.
+
+            Your first action MUST be a single message making these two Read tool calls in parallel:
+              - Read .agent_context.json
+              - Read .claude/skills/execute-adr/SKILL.md
+
+            The context file has board state (active stories, ADRs, director description). The skill file has your procedure, scope discipline, and stop conditions. Follow the skill exactly.
+
+            User request: "${{ inputs.intent }}"
+
+            IMPORTANT — board CLI: use `python .github/scripts/agent_cli.py --director $DIRECTOR_ID` for all board operations. Do NOT use `dcli` — it is not available in this CI environment. If CLAUDE.md says to use `dcli`, ignore that instruction here.
+
+            Always write `.work/agent_reply.txt` when done (NOT /tmp/ — that path is blocked). No persona — speak plainly.
+
+      - name: Post reply to Firestore
+        if: always()
+        env:
+          THREAD_ID: ${{ inputs.thread_id }}
+          FROM_NAME: ${{ inputs.director_name }}
+          TO_NAME: ${{ inputs.from_name }}
+          THREAD_TYPE: user_director
+        run: python .github/scripts/post_reply.py

@@ -1,0 +1,6 @@
+{
+  "_about": "Copy this file to gcp_config.json (gitignored) and fill in your values. The service-account JSON key referenced in credentials_path is NEVER committed.",
+  "project_id": "REPLACE_ME",
+  "credentials_path": "C:\\path\\to\\gcp-key.json",
+  "database": "REPLACE_ME-database-name"
+}

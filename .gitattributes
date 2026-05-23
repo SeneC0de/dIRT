@@ -1,0 +1,30 @@
+# Normalize line endings across Windows and Linux contributors.
+# Authored 2026-05-23 by Jones (dIRT) to prevent the mode/CRLF noise that
+# polluted the pre-split director-pattern repo.
+#
+# `* text=auto eol=lf` tells git: detect text files, store as LF, check out
+# native on Windows. No more phantom "every line changed" diffs.
+
+* text=auto eol=lf
+
+# Explicit overrides for files where line endings matter for execution.
+*.py text eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.html text eol=lf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+
+# Binary — never touch these.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.gz binary
+*.zip binary
+*.skill binary
