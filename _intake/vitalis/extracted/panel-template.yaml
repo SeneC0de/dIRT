@@ -1,0 +1,597 @@
+# Vitalis Refrigeration Rack Control Panel — Base Template (v0.1 draft)
+# Cross-job synthesis across E1392, E1395, E1399, E1404.
+# Only "invariants" attested in >= 2 of the 4 jobs are promoted; single-job
+# observations are demoted to `candidate_invariants` with a note and a finding.
+# Sources cite specific files + section anchors in
+# `_intake/vitalis/extracted/prior-analyses/<job>/...`.
+
+panel_template:
+  name: "Vitalis Refrigeration Rack Control Panel — base template (v0.1 draft)"
+  source_jobs:
+    - id: E1392
+      site: "4S Ranch"
+      panel_tag: "MB0216"
+      bom_rows: "23..100 (78)"
+      controller_family: "copeland_e3"
+      incoming_voltage: "208 VAC 3ph+E"
+      compressor_count: 5
+    - id: E1395
+      site: "Lazy Acres"
+      panel_tag: "SCP-01 / MB0219"
+      bom_rows: "14..84 (71)"
+      controller_family: "danfoss_ak"
+      incoming_voltage: "208 VAC 3ph+E"
+      compressor_count: 7
+    - id: E1399
+      site: "YCH Freecovery"
+      panel_tag: "MB0206"
+      bom_rows: "15..88 (74)"
+      controller_family: "danfoss_ak"
+      incoming_voltage: "460 VAC 3ph+E"
+      compressor_count: 9
+    - id: E1404
+      site: "Northgate 49"
+      panel_tag: "MB0221 (sometimes RCP-01)"
+      bom_rows: "13..83 (70)"
+      controller_family: "danfoss_ak"
+      incoming_voltage: "460 VAC 3ph+E"
+      compressor_count: 6
+
+  # ---------------------------------------------------------------------------
+  # INVARIANTS — present in >= 2 of 4 jobs with consistent intent. Each claim
+  # cites the in-bar BOM evidence; rows outside the purple/red bars are not
+  # used as evidence.
+  # ---------------------------------------------------------------------------
+  invariants:
+
+    workbook_skeleton:
+      - claim: >
+          Each job ships a single XLSX workbook with eight standard sheets:
+          `Panel Notes`, `BOM - SCP-01`, `Clean BOM`, `Clean BOM & Pick List`
+          (sometimes folded into one), `IO - Control Panel`, `Load Calc`,
+          `Legend Plates`, `Categories`. BOM is the only consistently
+          populated sheet; `Clean BOM`, `Clean BOM & Pick List`, and
+          `IO - Control Panel` are template shells.
+        evidence:
+          - {job: E1392, source: "E1392/xlsx-profile.md § Sheet inventory", note: "8 sheets; Clean BOM + IO sheets are header-only shells"}
+          - {job: E1395, source: "E1395/xlsx-profile.md § Sheets", note: "7 sheets; Clean BOM empty, IO sheet 2/1000 rows filled"}
+          - {job: E1399, source: "E1399/xlsx-profile.md § Sheet inventory", note: "8 sheets; Clean BOM and IO sheet empty templates"}
+          - {job: E1404, source: "E1404/xlsx-profile.md § Sheet inventory", note: "6 sheets; Clean BOM and IO are placeholder shells"}
+
+    bom_bar_convention:
+      - claim: >
+          BOM rows are delimited by a purple bar (fill FF8E7CC3, text
+          "NO MODS BELOW THIS LINE") at the top and a red bar (fill FFE06666,
+          text "DO NOT COPY TO SUBMITTAL BOM BELOW THIS LINE") at the bottom.
+          Only rows strictly between the bars count.
+        evidence:
+          - {job: E1392, source: "E1392/xlsx-profile.md § Purple/red bar rule", note: "purple R22, red R101, 78 in-bar rows"}
+          - {job: E1395, source: "E1395/xlsx-profile.md § Bar locations", note: "purple R13, red R85, 71 in-bar rows"}
+          - {job: E1399, source: "E1399/xlsx-profile.md § BOM bar rule applied", note: "purple R14, red R89, 74 in-bar rows"}
+          - {job: E1404, source: "E1404/xlsx-profile.md § BOM bar logic", note: "purple R12, red R84, 70 in-bar rows"}
+
+    enclosure:
+      - claim: >
+          Single floor-stand enclosure of standard depth ~18 in (460 mm) sized
+          to the compressor count + controller stack. NEMA 3R outdoor-capable
+          rating with an FSD (free-standing disconnect) or equivalent
+          door-mounted-disconnect style.
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md row Rittal 8845500", note: "Rittal 1400x800x500 (proposal) / 700 (BOM) S/D, NEMA 3R; depth discrepancy flagged"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row SCE-726018FSD", note: "Saginaw 72x60x18 FSD"}
+          - {job: E1399, source: "E1399/feature-parts-association.md row SCE-726018FSD", note: "Saginaw 72x60x18 FSD, NEMA 3R/12/13"}
+          - {job: E1404, source: "E1404/feature-parts-association.md rows R13-R15", note: "Saginaw 72x48x18 FSD + full + side subpanels"}
+        notes: >
+          Three of four use the Saginaw SCE-7Nxx18FSD family; only E1392 uses
+          a Rittal. Enclosure HxW scales with compressor count (see
+          variable_slots.enclosure_size).
+
+      - claim: >
+          A back subpanel sized to the enclosure ships as a separate line item
+          (Saginaw SCE-72PxxF1 family). E1404 also adds a side-mount subpanel
+          (SCE-72SMP14) for terminal-block real estate; E1395/E1399 do not.
+        evidence:
+          - {job: E1395, source: "E1395/feature-parts-association.md row SCE-72P60F1", note: "Full back subpanel matched to 72x60x18"}
+          - {job: E1399, source: "E1399/feature-parts-association.md row SCE-72P60F1", note: "Full back subpanel"}
+          - {job: E1404, source: "E1404/feature-parts-association.md row R14 + R15", note: "Full back subpanel + side-mount subpanel"}
+
+    main_disconnect:
+      - claim: >
+          ABB Tmax XT main breaker, 3-pole, sized to MOCP from Load Calc.
+          Always paired with (a) a Cu/Al lug kit matched to the wire
+          ampacity, and (b) a door-mounted rotary handle (RHE) with
+          interlock/padlock for service disconnect. Three line items per
+          disconnect.
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md rows 35-37", note: "XT5N 400A frame, 300-3000A adj, lug kit, RHE - MOCP 399A"}
+          - {job: E1395, source: "E1395/feature-parts-association.md rows 27-29", note: "XT7 1000A frame, lug kit, extended RHE - MOCP 882A"}
+          - {job: E1399, source: "E1399/feature-parts-association.md", note: "XT6 800A frame, lug kit, RHE - MOCP 656A"}
+          - {job: E1404, source: "E1404/feature-parts-association.md rows R16-R18", note: "XT5 300A frame, lug kit, RHE - MOCP 295A"}
+        notes: >
+          Frame size (XT2/XT5/XT6/XT7) varies with MOCP — see
+          variable_slots.main_breaker_sizing. The 3-line-item shape is
+          constant.
+
+    power_distribution_block:
+      - claim: >
+          One single-pole power distribution block per phase (nVent UDx family),
+          downstream of the main disconnect. Three units per panel in three
+          of four jobs (one per phase); the 460 V high-MOCP job (E1399) uses
+          six (two-bank split, still one PDB family per phase).
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md row UD6C500AL", note: "nVent 500MCM 6-pole, qty 3 - one per phase or feeder group"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row UD2C9C1250AL", note: "nVent 950A 1-pole, qty 3 - PDB1/2/3 = phases"}
+          - {job: E1399, source: "E1399/feature-parts-association.md row UD6C500AL", note: "nVent 380A 1-pole, qty 6 - two-bank split"}
+          - {job: E1404, source: "E1404/feature-parts-association.md row R38 UD-400A", note: "nVent 335A 1-pole, qty 3 - PDB1/2/3"}
+
+    ground_lug:
+      - claim: >
+          A single Penn-Union LA-500-1 mechanical ground lug (4 AWG-500 MCM)
+          provides the main GND landing. Universal across all jobs.
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md row LA-500-1 (62)", note: "qty 1"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row LA-500-1 (r52)", note: "qty 1"}
+          - {job: E1399, source: "E1399/feature-parts-association.md row LA-500-1", note: "qty 1, tag GND"}
+          - {job: E1404, source: "E1404/feature-parts-association.md row R43 LA-500-1", note: "qty 1, tag GND"}
+
+    ground_bar:
+      - claim: >
+          A single Schneider PK12GTA 12-terminal ground bar kit is added
+          beyond the main ground lug for field-ground landings.
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md row PK12GTA (38)", note: "qty 1"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row PK12GTA r68", note: "qty 1"}
+          - {job: E1399, source: "E1399/feature-parts-association.md row PK12GTA", note: "qty 1"}
+        notes: >
+          E1404 does not list PK12GTA as a discrete row (covered by the side-
+          mount subpanel TB area). 3-of-4 attestation is sufficient to keep
+          this as invariant; flag the E1404 omission as a candidate finding.
+
+    control_transformer_120vac:
+      - claim: >
+          Primary 120 VAC control bus is fed by a WEG CPTW3K0-GSC 3 kVA
+          control-power transformer (480 or 208 -> 120 VAC). Tagged in the
+          T41xx / T413 / T5031 family.
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md row CPTW3K0-GSC (49)", note: "T4131, sized from Load Calc 3 kVA primary 14.4A"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row CPTW3K0-GSC r44", note: "T1, 208->120 3 kVA"}
+          - {job: E1399, source: "E1399/feature-parts-association.md row CPTW3K0-GSC", note: "T413, 480->120 3 kVA, Load Calc T5031"}
+          - {job: E1404, source: "E1404/feature-parts-association.md row R67 CPTW3K0-GSC", note: "T413, 480->120 3 kVA"}
+
+    control_transformer_24vac:
+      - claim: >
+          Secondary 24 VAC bus is fed by a Schneider 9070T500D19 multi-tap
+          500 VA control transformer (208/240/277/380/480 -> 24 VAC), always
+          paired with a 9070FSC23 finger-safe terminal cover. Tagged in the
+          T419x / T5071 family.
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md rows 50-51", note: "T4191, +cover"}
+          - {job: E1395, source: "E1395/feature-parts-association.md rows r56-r57", note: "T2, +cover"}
+          - {job: E1399, source: "E1399/feature-parts-association.md", note: "T4191, +cover, feeds AK-PS 250"}
+          - {job: E1404, source: "E1404/feature-parts-association.md rows R49-R50", note: "T4191, +cover"}
+
+    control_24vdc_psu:
+      - claim: >
+          A WAGO 2587-2144 5 A 24 VDC base power supply sits on the panel
+          as the secondary 24 VDC rail (separate from any controller-specific
+          PSU). Tagged PWS-something. This is a Wago PSU and is therefore
+          high-confidence per the data rules.
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md row 2587-2144 (100)", note: "qty 1 - sits on red-bar boundary R100"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row 2587-2144 r72", note: "qty 1, tag PWS615"}
+          - {job: E1399, source: "E1399/feature-parts-association.md row 2587-2144", note: "qty 1"}
+          - {job: E1404, source: "E1404/feature-parts-association.md row R70 2587-2144", note: "qty 1, tag PWS615"}
+
+    ups_and_battery:
+      - claim: >
+          UPS module + 2 battery modules for control-power ride-through.
+          Phoenix Contact QUINT4-UPS 1 kVA (2320283 -- the 1 kVA model) +
+          two QUINT 24 VDC 7 Ah AGM battery modules (1274118). Tagged
+          UPS6021 + BAT6031/BAT6032.
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md rows 67-68", note: "1 UPS + 2 batteries"}
+          - {job: E1395, source: "E1395/feature-parts-association.md rows r69-r70", note: "1 UPS + 2 batteries; size 'per customer request'"}
+          - {job: E1404, source: "E1404/feature-parts-association.md rows R53-R54", note: "1 UPS + 2 batteries"}
+        notes: >
+          E1399 explicitly excludes UPS (RFQ Panel Options = FALSE). 3-of-4
+          attestation; declare this an invariant ONLY when RFQ Panel Options
+          UPS = TRUE. Captured as a candidate_invariant with override below.
+
+    phase_monitor_relay:
+      - claim: >
+          Schneider Harmony RM22TRxx 3-phase voltage monitoring relay watches
+          the incoming line for phase loss, sequence, and undervoltage.
+          Tagged CR2031.
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md row RM22TR31 (56)", note: "RM22TR31, 208-240V"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row RM22TR31 r55", note: "RM22TR31, 200-240V"}
+          - {job: E1399, source: "E1399/feature-parts-association.md row RM22TR33", note: "RM22TR33, 380-480V (variant for 460V)"}
+          - {job: E1404, source: "E1404/feature-parts-association.md row R48 RM22TR33", note: "RM22TR33, 380-480V"}
+        notes: >
+          Same family, voltage-range variant (-TR31 for 208 V, -TR33 for 460 V).
+
+    panel_climate_kit:
+      - claim: >
+          Four-piece Finder panel-environment kit: 7T.81.0.000.2303 (thermostat),
+          7L.43.0.230.1100 (panel LED light), 7F.21.8.120.3100 (filter fan
+          120 V), 7F.02.0.000.3000 (exhaust filter). Tagged TAS / WLT / MTR.
+          Identical across all four jobs.
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md rows 52-55", note: "All 4 parts present"}
+          - {job: E1395, source: "E1395/feature-parts-association.md rows r48-r51", note: "All 4 parts present"}
+          - {job: E1399, source: "E1399/feature-parts-association.md", note: "All 4 parts present"}
+          - {job: E1404, source: "E1404/feature-parts-association.md rows R39-R42", note: "All 4 parts present"}
+        notes: >
+          The 7L.43 light is a 230 V variant on a 120 V panel -- noted as
+          voltage-tolerant LED but flagged in part-feel.md for E1395.
+
+    ethernet_switch:
+      - claim: >
+          Single Phoenix Contact 2702324 (FL Switch 2000 series, 8-port managed
+          industrial Ethernet, 10/100 Mbps) is the network backbone for
+          controller-stack traffic.
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md row 2702324 (66)", note: "8-port managed"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row 2702324 r54", note: "Hosts AK-SM, AK-PC, HMI, conv outlet, door HMI"}
+          - {job: E1399, source: "E1399/feature-parts-association.md row 2702324", note: "Pre-checked TRUE in RFQ Panel Options"}
+          - {job: E1404, source: "E1404/feature-parts-association.md row R52 2702324", note: "Modbus/IP backbone"}
+
+    door_service_receptacle:
+      - claim: >
+          Phoenix Contact 1415758 (or 1415759 with circuit breaker) combo
+          convenience outlet + RJ45 jack, door-mounted, tagged RECP5061.
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md row 1415759 (65)", note: "qty 1, w/ 3A CB"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row 1415758 r53", note: "HEAVYPORT GFCI + RJ45"}
+          - {job: E1399, source: "E1399/feature-parts-association.md row 1415758", note: "HEAVYPORT"}
+          - {job: E1404, source: "E1404/feature-parts-association.md row R51 1415758", note: "Tag RECP5061"}
+
+    cc_fuse_holder_and_primary_fuses:
+      - claim: >
+          Class CC fused disconnect for control transformer primary protection.
+          Littelfuse LPSC0002Z 30 A 2-pole holder + KLDR-series time-delay
+          fuses (typically 15 A for the 3 kVA xfmr primary). Spare fuse pairs
+          consistently booked as separate BOM rows.
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md rows 80-85", note: "LPSC + 15A + 5A + spares drawer"}
+          - {job: E1395, source: "E1395/feature-parts-association.md rows r45-r47", note: "LPSC + 15A + 5A"}
+          - {job: E1399, source: "E1399/feature-parts-association.md", note: "LPSC + 15A + 3A + spares (separate rows)"}
+          - {job: E1404, source: "E1404/feature-parts-association.md rows R44-R47", note: "LPSC + KLKR015/003/001"}
+
+    spare_fuse_drawer:
+      - claim: >
+          A WAGO 709-591 DIN-rail switchgear cabinet drawer holds the spare
+          fuses, tagged "SPARE FUSES" (function tag, not device tag).
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md row 709-591 (83)", note: "qty 1"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row 709-591 r71", note: "qty 1"}
+          - {job: E1399, source: "E1399/feature-parts-association.md row 709-591", note: "qty 1"}
+          - {job: E1404, source: "E1404/feature-parts-association.md row R69 709-591", note: "qty 1"}
+
+    interposing_relays:
+      - claim: >
+          Three-tier WAGO interposing-relay block (high-confidence per data
+          rules):
+            * 788-515 -- 115 VAC, 2 CO, 8 A (workhorse, qty ~13-14)
+            * 857-304 -- 24 VDC, 1 CO, 6 A (qty ~3)
+            * 788-512 -- 24 VAC, 2 CO, 8 A (qty ~3)
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md rows 59-60, 71", note: "788-515 qty 14, 788-512 qty 3, 857-304 qty 3"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row r73-r77", note: "788-515 qty 13, 857-304 qty 3, 788-512 qty 3 (+ 857-357 qty 3, 858-158 qty 2)"}
+          - {job: E1399, source: "E1399/feature-parts-association.md", note: "788-515 qty 14, 857-304 qty 3, 788-512 qty 3"}
+          - {job: E1404, source: "E1404/feature-parts-association.md rows R71-R75", note: "788-515 qty 13, 788-512 qty 3, 857-304 qty 3, +857-357 qty 3, 858-158 qty 2"}
+
+    door_indicators_per_compressor:
+      - claim: >
+          Per compressor: 1 white pilot light (RUNNING) + 1 red pilot light
+          (FAULT) + 1 selector switch (2-position maintained) + a matching
+          Carolina Laser 22 mm 3-line legend plate. Pilot-device family is
+          locked once the first device is chosen (XB5/XB4 in E1392/E1395,
+          ABB CL2/M2SS in E1399/E1404).
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md per-compressor table", note: "5 compressors x (XB5AVG1 + XB5AVG4 + XB4BD21) = 15 + 15 legend plates"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row r58/r59/r60/r84", note: "7 compressors x 3 + 21 legend plates"}
+          - {job: E1399, source: "E1399/feature-parts-association.md", note: "9 compressors x 3 (CL2-513C/CL2-513R/E214-16-101) + 18 legend plates (count mismatch flagged)"}
+          - {job: E1404, source: "E1404/feature-parts-association.md rows R55-R59, R82", note: "6 compressors x (CL2-513C + CL2-513R + M2SS2-10B + MCBH-00 + MCB-10) + 18 legend plates"}
+
+    branch_circuit_breakers_120v:
+      - claim: >
+          A bank of 1- or 2-pole DIN-rail mini circuit breakers protects 120
+          VAC branches. Schneider Multi9 M9F42xxx family for E1392/E1395
+          (208 V context) and ABB ST200M (ST201M-Cxx) family for E1399/E1404
+          (460 V context). The 2 A breaker is always the highest-quantity
+          single row (qty ~16-19), protecting individual coil/sensor loads.
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md rows 72-79", note: "Schneider M9F42xxx mix; M9F42102 qty 16 dominates"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row r61-r67", note: "Schneider M9F42xxx mix; M9F42102 qty 16 dominates"}
+          - {job: E1399, source: "E1399/feature-parts-association.md", note: "ABB ST201M mix; ST201M-C2 qty 19 dominates"}
+          - {job: E1404, source: "E1404/feature-parts-association.md rows R60-R66", note: "M9F42102 qty 16 + ABB ST201M-C6 qty 7, etc."}
+        notes: >
+          The CB FAMILY varies with incoming voltage / regional preference
+          (see variable_slots.branch_breaker_family). The PATTERN of
+          a high-count 2 A row + smaller 6 A row per compressor is invariant.
+
+    auxiliary_mini_contactors:
+      - claim: >
+          WEG CWCA0-31-00V18 mini-contactor (3 NO + 1 NC, 24 VDC coil) is the
+          one-off auxiliary contactor across jobs - used for unloaders, oil
+          heaters, panel-internal interlock loads.
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md row CWCA0-31-00V18 (48)", note: "qty 4, four tag locations"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row CWCA0-31-00V18 r43", note: "qty 2"}
+          - {job: E1404, source: "E1404/feature-parts-association.md row R68 CWCA0-31-00V18", note: "qty 3"}
+        notes: >
+          E1399 BOM does not include CWCA0-31-00V18 (3-of-4 attestation).
+
+    tag_convention:
+      - claim: >
+          Device tags follow `<TYPE><PAGE><LINE>`: a 2-3 letter type prefix
+          (CB, FU, CR, LT, SS, T, MTR, RECP, PDB, PWS, BAT, UPS, GND, etc.)
+          followed by 4 digits encoding the drawing page (first two) and
+          line on page (last two). Multiple BOM rows can share a part with
+          comma-separated tags. Pages 14, 18, 22, 33, 37 etc. host one
+          compressor each.
+        evidence:
+          - {job: E1392, source: "E1392/xlsx-profile.md § Tag conventions", note: "<TYPE><PAGE><LINE>; CB6111 = page 61 line 11; LT14131 = page 14 line 13"}
+          - {job: E1395, source: "E1395/feature-parts-association.md", note: "LT/SS/CR tag prefixes match this pattern"}
+          - {job: E1399, source: "E1399/xlsx-profile.md § Naming conventions", note: "Verbatim: 'alpha prefix + 4-digit numeric. Pages on the drawing are encoded in the second pair of tag digits.'"}
+          - {job: E1404, source: "E1404/xlsx-profile.md", note: "CB5042, CB5151, CB11071, etc. -- same pattern"}
+
+    bom_column_schema:
+      - claim: >
+          BOM sheet uses identical 13-column schema (header at row 9):
+          Tag | Part # | Description | Manufacturer | Qty | Category |
+          Price/Unit | Ext. Cost | PO# | PO Date | Ship Date | Total (mA) |
+          Weight (lb). E1404 substitutes "Supplier" for "Total (mA)/Weight".
+        evidence:
+          - {job: E1392, source: "E1392/xlsx-profile.md § Column schema", note: "13 cols B-N, header R9"}
+          - {job: E1395, source: "E1395/xlsx-profile.md § Column layout", note: "14 cols B-O (adds Total lb)"}
+          - {job: E1399, source: "E1399/xlsx-profile.md § Headers", note: "14 cols, header R9"}
+          - {job: E1404, source: "E1404/xlsx-profile.md § BOM bar logic", note: "12 cols incl 'Supplier' - one variant"}
+
+    wago_terminal_block_field:
+      - claim: >
+          The lower portion of the in-bar BOM consistently holds 8-12 rows of
+          WAGO terminal blocks, end stops, jumpers, and DIN rail. Per data
+          rules these QUANTITIES are estimates and low-confidence -- but
+          their PRESENCE as line items is invariant.
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md rows 88-99", note: "12 rows, all flagged LOW-CONFIDENCE"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row r78-r83", note: "6+ rows estimates"}
+          - {job: E1399, source: "E1399/feature-parts-association.md", note: "12 rows of WAGO TBs, all flagged 'estimate'"}
+          - {job: E1404, source: "E1404/feature-parts-association.md rows R76-R81", note: "6+ rows, all 'estimate'"}
+        notes: >
+          Common SKUs that recur: 249-117 (end stops), 2002-3227 (triple-deck
+          5.2 mm), 2002-1201, 2002-3201, 2006-1201, 2002-3217, 210-112
+          (DIN rail), 788-113 (jumpers).
+
+    load_calc_sheet:
+      - claim: >
+          Each workbook ships a `Load Calc` sheet that lists per-compressor
+          FLA, transformer sizing, and computes Total FLA / MCA / MOCP --
+          which then drives the main breaker selection.
+        evidence:
+          - {job: E1392, source: "E1392/xlsx-profile.md § Load Calc", note: "FLA 293.40, MCA 314.55, MOCP 399.15"}
+          - {job: E1395, source: "E1395/xlsx-profile.md § Load Calc", note: "Total FLA 687.6 A, MCA 726.6 A, MOCP 882.6 A"}
+          - {job: E1399, source: "E1399/xlsx-profile.md § Load Calc", note: "FLA 559.9 A, MCA 579.2 A, MOCP 656.3 A"}
+          - {job: E1404, source: "E1404/xlsx-profile.md § Load Calc shape", note: "Standard table; feeds RFQ Project Info"}
+
+    legend_plates_sheet:
+      - claim: >
+          A `Legend Plates` sheet enumerates door-device labels in 3-line text,
+          with one row per device (bulkhead sensor labels + pilot/selector
+          labels), referencing the drawing page and bulkhead position.
+        evidence:
+          - {job: E1392, source: "E1392/xlsx-profile.md § Legend Plates", note: "168 cells populated; bulkhead + pilot-light label tables"}
+          - {job: E1399, source: "E1399/xlsx-profile.md § Legend Plates", note: "33 plate rows"}
+        notes: >
+          E1395 and E1404 omit this sheet (2-of-4 attestation; demote to
+          `candidate_invariants` if downstream consumers see it missing).
+
+    sccr_65kaic:
+      - claim: >
+          Panel short-circuit current rating is 65 kAIC. Used as the
+          override target for the main breaker selection.
+        evidence:
+          - {job: E1392, source: "E1392/README.md", note: "208 VAC, SCCR 65 kAIC"}
+          - {job: E1395, source: "E1395/xlsx-profile.md § Panel Notes", note: "SCCR 65 kAIC (customer wanted 100, downgraded - flagged)"}
+          - {job: E1399, source: "E1399/lifecycle.md", note: "SCCR 65 kAIC"}
+          - {job: E1404, source: "E1404/xlsx-profile.md § Load Calc + RFQ", note: "SCCR 65 kAIC, 65 kAIC matches panel"}
+
+    proposal_lead_time_4_to_6_weeks:
+      - claim: >
+          Standard proposal lead time = 4-6 weeks from PO receipt. Boilerplate
+          across all jobs.
+        evidence:
+          - {job: E1392, source: "E1392/process-docs.md § Panel Proposal", note: "Lead time stated: 4-6 weeks upon receipt of PO"}
+          - {job: E1399, source: "E1399/lifecycle.md § Stage 2", note: "Apr 23 proposal, $42,535.42, lead time 4-6 weeks"}
+          - {job: E1404, source: "E1404/lifecycle.md § Stage 3", note: "4-6 week lead time"}
+
+  # ---------------------------------------------------------------------------
+  # CANDIDATE INVARIANTS -- attested in exactly one job, or contradicted by
+  # at least one other. Listed so a future synthesis pass can revisit.
+  # ---------------------------------------------------------------------------
+  candidate_invariants:
+
+    energy_meter_with_rogowski_coils:
+      - claim: >
+          Phoenix Contact 2908307 (PM5011) energy meter + 3x 2910322
+          Rogowski coil + cable kits.
+        attested_jobs: [E1392]
+        notes: >
+          E1399 RFQ explicitly says energy meter = FALSE. Reclassified as
+          a Panel Options toggle (see selection-rules.yaml).
+
+    safety_relay:
+      - claim: >
+          A safety relay is added for E-stop / interlock chain.
+        attested_jobs: [E1395]
+        notes: >
+          E1395 drawing rev table says "ADDED IN SAFETY RELAY" but no BOM
+          line for it. Other jobs do not mention. Could be customer-supplied,
+          could be missing-from-BOM (see findings.md).
+
+    machine_stop_button:
+      - claim: >
+          Schneider XB5AS8444 22 mm mushroom E-stop, 2NC, latching.
+        attested_jobs: [E1399]
+        notes: >
+          Pre-checked TRUE in E1399 RFQ Panel Options. E1392 RFQ has it
+          FALSE. Treat as a Panel Options toggle.
+
+    spare_io_board:
+      - claim: >
+          Spare I/O module booked as a separate BOM row (Copeland 810-3064
+          88 I/O board on E1392; AK-XM 205A doubled on E1404).
+        attested_jobs: [E1392, E1404]
+        notes: >
+          E1392 proposal explicitly calls out "88 I/O board... with spare
+          terminals". E1404 has two AK-XM 205A rows with different tags.
+          This is a panel-options toggle, not an invariant.
+
+  # ---------------------------------------------------------------------------
+  # VARIABLE SLOTS -- the parameters that change between jobs. Detailed
+  # selection logic for each is in selection-rules.yaml.
+  # ---------------------------------------------------------------------------
+  variable_slots:
+
+    refrigeration_controller_family:
+      observed_options:
+        - id: copeland_e3
+          jobs: [E1392]
+          stack:
+            - "Copeland E3 RX controller (860-1305)"
+            - "E2E plug-in DIO card (638-4880)"
+            - "MultiFlex 168A0 (810-3065)"
+            - "MultiFlex 168 (810-3066)"
+            - "iPro CO2 high-press controller (818-9010)"
+            - "XEV20D dual stepper kit (818-5003)"
+            - "88 I/O board (810-3064)"
+            - "Visiograph display (818-9002)"
+          note: "Customer-furnished in E1392 (zero priced BOM rows)."
+        - id: danfoss_ak
+          jobs: [E1395, E1399, E1404]
+          stack:
+            - "AK-PC 782B (pack controller)"
+            - "AK-SM 850A (system manager)"
+            - "AK-CM 101C (comm module)"
+            - "AK-OB 110 (analog output)"
+            - "AK-XM 205A (8 AI + 8 DO) -- 1 or 2 instances"
+            - "AK-XM 103A (4 AI + 4 AO) -- typically 2"
+            - "AK-XM 101A (8 AI)"
+            - "AK-XM 208C (8 AI + 4 stepper)"
+            - "AK-PS 250 (24 VDC bus PSU) -- always 2"
+      drives:
+        - bom_module_stack_rows
+        - io_channel_map
+        - per_compressor_branch_aux_block_count
+        - door_pilot_device_family   # XB5/XB4 for Copeland, CL2/M2SS for Danfoss
+
+    hmi_plc:
+      observed_options:
+        - id: copeland_visiograph
+          jobs: [E1392]
+          note: "Copeland 818-9002 Visiograph + iPro_CO2 display. Door-mounted."
+        - id: danfoss_ak_sm_as_hmi
+          jobs: [E1395, E1399, E1404]
+          note: >
+            The AK-SM 850A System Manager doubles as the HMI; no separate
+            HMI part. E1395 drawings reference an MMIGRS2 in the Danfoss
+            inventory but it does not appear in the BOM (flagged).
+      drives:
+        - hmi_cutout_required
+        - hmi_ethernet_drop
+        - mmigrs2_optional_line_item
+
+    incoming_voltage:
+      observed_options:
+        - {voltage: "208 VAC 3ph+E 60 Hz", jobs: [E1392, E1395]}
+        - {voltage: "460 VAC 3ph+E 60 Hz", jobs: [E1399, E1404]}
+      drives:
+        - control_xfmr_primary_tap
+        - phase_monitor_voltage_variant     # RM22TR31 vs RM22TR33
+        - branch_breaker_family             # see below
+        - pilot_light_voltage_variant
+
+    branch_breaker_family:
+      observed_options:
+        - {family: "schneider_multi9_m9f42xxx", jobs: [E1392, E1395], note: "208 V panels."}
+        - {family: "abb_st201m", jobs: [E1399, E1404], note: "460 V panels."}
+      drives:
+        - bom_branch_breaker_rows
+        - busbar_accessory_TGK12A   # E1404 only
+
+    main_breaker_sizing:
+      input: "MOCP from Load Calc"
+      observed_options:
+        - {frame: "ABB XT2", trip_range: "30-400 A", jobs: [], note: "Not seen in this sample."}
+        - {frame: "ABB XT5", trip_range: "300-400 A", jobs: [E1392, E1404]}
+        - {frame: "ABB XT6", trip_range: "800 A", jobs: [E1399]}
+        - {frame: "ABB XT7", trip_range: "1000 A", jobs: [E1395]}
+      drives:
+        - main_breaker_part_no
+        - lug_kit_part_no
+        - rotary_handle_part_no
+      sizing_rule: "Pick smallest XT-family frame whose trip range covers MOCP"
+
+    compressor_count:
+      observed_options: [5, 6, 7, 9]
+      breakdown:
+        - {job: E1392, mt: 3, lt: 2, vfd_count: 2, total: 5}
+        - {job: E1395, mt: 4, lt: 3, vfd_count: 2, total: 7}
+        - {job: E1399, mt: 5, lt: 4, vfd_count: 4, total: 9}
+        - {job: E1404, mt: 4, lt: 2, vfd_count: 2, total: 6}
+      drives:
+        - motor_protection_relay_count
+        - contactor_count
+        - per_compressor_door_devices_count
+        - legend_plate_count
+        - io_channel_count
+        - enclosure_size
+
+    enclosure_size:
+      observed_options:
+        - {hxwxd_mm: "1400x800x500-or-700", brand: "Rittal", jobs: [E1392]}
+        - {hxwxd_in: "72x60x18", brand: "Saginaw SCE-726018FSD", jobs: [E1395, E1399]}
+        - {hxwxd_in: "72x48x18", brand: "Saginaw SCE-724818FSD", jobs: [E1404]}
+      drives:
+        - subpanel_part_no
+        - side_subpanel_optional
+        - rotary_handle_shaft_length
+
+    motor_protection_branch_topology:
+      input: "compressor FLA (MT vs LT, VFD vs across-the-line)"
+      observed_options:
+        - id: weg_package
+          jobs: [E1392, E1395, E1399]
+          stack:
+            - "WEG MPW100-3-Uxxx (MT) or MPW40-3-Uxxx (LT) -- manual motor protector"
+            - "WEG CWM contactor (MT) or CWB contactor (LT)"
+            - "TSB SC-11 trip-signal block"
+            - "IB MPW100 insulating plate"
+            - "ECCMP-xxBxx mechanical link"
+        - id: abb_package
+          jobs: [E1404]
+          stack:
+            - "ABB MS165-xx (MT) or MS132-xx (LT) -- MMP"
+            - "ABB HKF1-11 MMP front-mount aux"
+            - "ABB AFxx-30-xx-13 contactor (120 VAC coil) with built-in or front-mount aux"
+            - "ABB CA4-10 contactor aux block"
+            - "ABB BEAxx-4 MMP-to-contactor coupling link"
+      notes: >
+        E1404 deviates because the cluster (NG49/53/54) ships with an ABB-
+        based Motor Protection Selections supplemental that overrides the
+        WEG default. See findings.md for the MS165-65 vs MS165-54 dispute.
+
+    rfq_panel_options_toggles:
+      input: "RFQ Project Info sheet booleans"
+      observed_options:
+        - {key: ups, default: TRUE,  exception: "E1399 = FALSE"}
+        - {key: energy_meter_rogowski, default: FALSE, exception: "E1392 = TRUE"}
+        - {key: ethernet_switch, default: TRUE, exception: "(always present in sample)"}
+        - {key: machine_stop_button, default: FALSE, exception: "E1399 = TRUE"}
+        - {key: spare_io_board, default: FALSE, exception: "E1392, E1404 = TRUE"}
+        - {key: floor_legs_6in, default: FALSE, exception: "(none observed TRUE)"}
+        - {key: ul_sticker, default: TRUE}
+
+# End of panel-template.yaml

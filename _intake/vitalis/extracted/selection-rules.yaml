@@ -1,0 +1,406 @@
+# Vitalis Refrigeration Rack Control Panel -- Selection Rules (v0.1 draft)
+# The "variable 15%" -- decisions that change between jobs and drive
+# BOM-line-item variation away from `panel-template.yaml`'s invariants.
+#
+# Citations point to the prior-analyses files in
+# `_intake/vitalis/extracted/prior-analyses/<job>/`.
+# Confidence: H = directly attested + arithmetic checks pass,
+#             M = inferred from 2+ jobs with consistent intent,
+#             L = single-job observation OR contradicted by a sister doc.
+
+selection_rules:
+
+  # =========================================================================
+  # AXIS 1 -- the refrigeration controller family. Drives the largest single
+  # block of BOM line items and propagates to door devices, IO map, branch
+  # aux blocks, and pilot voltage.
+  # =========================================================================
+  - dimension: refrigeration_controller_family
+    inputs:
+      - {name: family, type: enum, values: [copeland_e3, danfoss_ak]}
+      - {name: customer_furnished, type: bool, default: false}
+    outputs:
+      copeland_e3:
+        bom_rows:
+          - {part: "860-1305", desc: "E3 RX controller", qty: 1}
+          - {part: "638-4880", desc: "E2E plug-in DIO card", qty: 1}
+          - {part: "810-3065", desc: "MultiFlex 168A0 (16 DI + 8 RO + 4 AO)", qty: 1}
+          - {part: "810-3066", desc: "MultiFlex 168 (16 DI + 8 RO)", qty: 1}
+          - {part: "818-9010", desc: "iPro CO2 high-press controller", qty: 1}
+          - {part: "818-5003", desc: "XEV20D dual stepper kit", qty: 2}
+          - {part: "810-3064", desc: "88 I/O board (often called out as 'spare terminals' in proposal)", qty: 1}
+          - {part: "818-9002", desc: "Visiograph display (HMI)", qty: 1}
+        door_pilot_family: "schneider_xb5_xb4"
+        notes:
+          - "Copeland items priced at $0 when customer-furnished (E1392 case)."
+          - "Visiograph IS the HMI -- no separate HMI part."
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md row 23-30", note: "Full 8-line Copeland stack, all priced $0"}
+      danfoss_ak:
+        bom_rows:
+          - {part: "AK-PC 782B", desc: "pack controller", qty: 1}
+          - {part: "AK-SM 850A", desc: "system manager (and HMI)", qty: 1}
+          - {part: "AK-CM 101C", desc: "comm module", qty: 1}
+          - {part: "AK-OB 110", desc: "analog output expansion", qty: 1}
+          - {part: "AK-PS 250", desc: "24 VDC bus PSU", qty: 2}
+          - {part: "AK-XM 205A", desc: "8 AI + 8 DO module", qty: "1 or 2"}
+          - {part: "AK-XM 103A", desc: "4 AI + 4 AO module", qty: 2}
+          - {part: "AK-XM 101A", desc: "8 AI module (sensor inputs)", qty: 1}
+          - {part: "AK-XM 208C", desc: "8 AI + 4 stepper drivers", qty: 1}
+        door_pilot_family: "abb_cl2_m2ss"
+        notes:
+          - "AK-SM 850A doubles as HMI; no separate door HMI part."
+          - "AK-XM 205A may appear as 1 row qty 2 OR as 2 rows qty 1 each with different tags. E1404 uses the latter pattern."
+          - "Module count + mix is set by the IO channel count from the (currently sparse) IO sheet."
+        evidence:
+          - {job: E1395, source: "E1395/feature-parts-association.md row r17-r26", note: "Full AK stack, 2x AK-XM 103A + 1x AK-XM 101A"}
+          - {job: E1399, source: "E1399/feature-parts-association.md", note: "10 modules total; PC54071 tag reused on R15 + R17 (flagged)"}
+          - {job: E1404, source: "E1404/feature-parts-association.md rows R28-R37", note: "Two AK-XM 205A rows with distinct tags"}
+    confidence: H
+
+  # =========================================================================
+  # AXIS 2 -- HMI / PLC selection on top of refrigeration controller.
+  # =========================================================================
+  - dimension: hmi_plc
+    inputs:
+      - {name: family, type: enum, values: [copeland_visiograph, danfoss_ak_sm, danfoss_mmigrs2_addon]}
+    outputs:
+      copeland_visiograph:
+        bom_rows:
+          - {part: "818-9002", desc: "Visiograph display", qty: 1}
+        door_cutout_required: true
+        notes: ["Door cutout pattern set by Visiograph footprint; verify against drawing before cutting."]
+      danfoss_ak_sm:
+        bom_rows: []  # No discrete HMI line -- AK-SM is the HMI
+        door_cutout_required: true
+        notes:
+          - "AK-SM 850A mounting cutout drives door layout."
+          - "Fab Packet warns 'verify hole pattern in drawings vs actual device BEFORE cutting hole' (E1395)."
+      danfoss_mmigrs2_addon:
+        bom_rows:
+          - {part: "MMIGRS2", desc: "Danfoss door HMI (in addition to AK-SM)", qty: 1}
+        notes:
+          - "Referenced in E1395 Danfoss Inventory sheet (qty 3) and drawing sheet 67 'HMI' but ABSENT from in-bar BOM."
+          - "Flagged in findings.md as a BOM-vs-drawing drift."
+    evidence:
+      - {job: E1392, source: "E1392/feature-parts-association.md row 30", note: "Visiograph in BOM"}
+      - {job: E1395, source: "E1395/feature-parts-association.md § Features absent", note: "MMIGRS2 in inventory + drawings but not BOM"}
+      - {job: E1399, source: "E1399/feature-parts-association.md", note: "AK-SM IS the HMI"}
+      - {job: E1404, source: "E1404/feature-parts-association.md row R33", note: "AK-SM 850A, no separate HMI"}
+    confidence: M
+    notes: >
+      Add-on door HMI (MMIGRS2) is a candidate option flagged in only one
+      job's drawings. Treat as "request explicit confirmation from customer"
+      until at least one BOM-line attestation lands.
+
+  # =========================================================================
+  # AXIS 3 -- compressor count drives motor-protection branch quantities.
+  # Strongest pattern in the entire corpus.
+  # =========================================================================
+  - dimension: compressor_count
+    inputs:
+      - {name: total_compressors, type: int, range: "5..9 observed"}
+      - {name: mt_count, type: int}
+      - {name: lt_count, type: int}
+      - {name: vfd_count, type: int, default: 2, note: "Typically VFD on MT1 + LT1"}
+    outputs:
+      per_compressor:
+        - {part: "white pilot light (RUNNING)", family: "see refrigeration_controller_family.door_pilot_family", qty_per: 1}
+        - {part: "red pilot light (FAULT)", family: "see refrigeration_controller_family.door_pilot_family", qty_per: 1}
+        - {part: "selector switch (2-pos maintained Hand/Off/Auto)", family: "see refrigeration_controller_family.door_pilot_family", qty_per: 1}
+        - {part: "Carolina Laser 1631 legend plate, 3-line", qty_per: "approx 3 (per device cluster)"}
+        - {part: "motor protection relay (MPR/MMP)", note: "see motor_protection_branch_topology rule"}
+        - {part: "contactor", note: "see motor_protection_branch_topology rule"}
+        - {part: "trip-signal block (TSB)", note: "only on non-VFD branches"}
+        - {part: "ECCMP / BEA mechanical coupler", note: "MPR-to-contactor link"}
+    invariants_anchored:
+      - "Door device count = compressors x 3 (RUNNING + FAULT + selector)"
+      - "Legend plates qty approx compressors x 3 (one per device cluster); see legend-count flag in findings.md"
+    evidence:
+      - {job: E1392, source: "E1392/feature-parts-association.md § Per-compressor parts (5 compressors total: 3 MT1 + 2 LT1)", note: "5 x (XB5AVG1 + XB5AVG4 + XB4BD21) cleanly"}
+      - {job: E1395, source: "E1395/feature-parts-association.md row r58/r59/r60", note: "7 compressors x 3 devices, 21 legend plates = 7 x 3"}
+      - {job: E1399, source: "E1399/feature-parts-association.md", note: "9 compressors x 3 = 27 devices but legend plate qty 18 (mismatch flagged)"}
+      - {job: E1404, source: "E1404/feature-parts-association.md rows R55-R59", note: "6 motors x 3 + 18 legend plates"}
+    confidence: H
+
+  # =========================================================================
+  # AXIS 4 -- motor protection branch topology. Splits WEG vs ABB.
+  # =========================================================================
+  - dimension: motor_protection_branch_topology
+    inputs:
+      - {name: package, type: enum, values: [weg_package, abb_package]}
+      - {name: per_compressor_fla, type: float, note: "from Load Calc"}
+      - {name: is_vfd, type: bool, per_compressor: true}
+    sizing_rule: |
+      UL508A SB4 — 120% rule. The MMP's max adjustable trip rating MUST be
+      >= motor FLA * 1.20 (20% headroom for transients, harmonics, aging).
+      Frame selection cascades:
+        1. Compute threshold = FLA * 1.20
+        2. Select smallest standard MMP whose max_trip >= threshold
+        3. Contactor frame matches MMP frame (AC3 rating >= MMP max_trip)
+      Sizing to bare FLA (the AI supplemental's default) FAILS UL508A.
+      Example (E1404, ABB):
+        - FLA 51.1 A * 1.20 = 61.32 A -> MS165-65 (max 65 A) passes; MS165-54 (max 54 A) fails
+        - FLA  9.84 A * 1.20 = 11.81 A -> MS132-16 (max 16 A) passes; MS132-10 (max 10 A) fails
+    outputs:
+      weg_package:
+        per_mt_compressor:
+          - {part: "WEG MPW100-3-U075 / U090 / U100", desc: "manual motor protector, frame per UL508A 120% rule above (NOT bare FLA)"}
+          - {part: "WEG CWM95 / CWM105 / CWM180 contactor", desc: "AC3 rating ≥ FLA, coil 24 VDC or 120 VAC matching control bus"}
+          - {part: "TSB SC-11 MPW100", desc: "trip-signal block; OMIT on VFD branches"}
+          - {part: "IB MPW100", desc: "insulating plate between adjacent MPRs"}
+          - {part: "ECCMP-xxBxx", desc: "mechanical link MPR-to-contactor"}
+          - {part: "LW2-S300 or LST25/LST65", desc: "line-side fingersafe lugs/terminals"}
+        per_lt_compressor:
+          - {part: "WEG MPW40-3-U016 / U040 / U065 / MPW80-3-Uxxx", desc: "smaller frame for LT FLA"}
+          - {part: "WEG CWB18 / CWB50 / CWB80", desc: "smaller contactor frame"}
+          - {part: "TSB (LT variant)", desc: "trip-signal; OMIT on VFD branches"}
+          - {part: "ECCMP-40B38 or ECCMP-80B80", desc: "connector kit"}
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md rows 40-47", note: "Single-VFD MT case + LT pair"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row r35-r42", note: "MT branch with DWB250 instead of MPW (heavier frame variant)"}
+          - {job: E1399, source: "E1399/feature-parts-association.md", note: "MPW100-3-U075 + 4x U090 mix"}
+      abb_package:
+        per_mt_compressor:
+          - {part: "ABB MS165-xx", desc: "MMP, frame per UL508A 120% rule above (NOT bare FLA)"}
+          - {part: "ABB HKF1-11", desc: "MMP front-mount aux block"}
+          - {part: "ABB AFxx-30-00-13", desc: "contactor, 120 VAC coil"}
+          - {part: "ABB CA4-10", desc: "front-mount aux block; OMIT on VFD branches"}
+          - {part: "ABB BEA65-4", desc: "MMP-to-contactor coupler"}
+        per_lt_compressor:
+          - {part: "ABB MS132-xx", desc: "smaller MMP"}
+          - {part: "ABB HKF1-11", desc: "aux"}
+          - {part: "ABB AF16-30-10-13", desc: "smaller contactor (-10 suffix = built-in aux)"}
+          - {part: "ABB BEA16-4", desc: "coupler"}
+        evidence:
+          - {job: E1404, source: "E1404/feature-parts-association.md rows R19-R27", note: "Full ABB stack. BOM MS165-65 + MS132-16 are UL508A-correct per 120% rule (FLA 51.1 -> MS165-65; FLA 9.84 -> MS132-16). The Motor_Protection_Selections supplemental sized to bare FLA and would have failed UL508A. RESOLVED 2026-05-24 (Randall + Jones)."}
+    quantity_rule: >
+      For each compressor: 1 MPR + 1 contactor + 1 coupler. Add 1 trip-signal
+      block + 1 aux block (CA4 or BCXML11) ONLY when compressor is NOT VFD-fed
+      (the VFD owns the trip-signal and aux-status function). LT MPR
+      insulating plates: 1 per MPR (top + bottom = 2 per cluster of 2).
+    notes:
+      - "WEG is the default package (3 of 4 jobs)."
+      - "E1404 uses ABB because the cluster supplemental Motor_Protection_Selections_NG49-53-54.xlsx specifies ABB for the NG49/53/54 cluster."
+      - "MT FLA range varies wildly: 11 A (E1392 LT), 51 A (E1404 MT), 77 A (E1399 MT), 156 A (E1395 MT). Frame size is the lookup variable."
+    confidence: M
+
+  # =========================================================================
+  # AXIS 5 -- incoming voltage. Cascades to phase monitor, branch breaker
+  # family, and pilot/contactor coil voltages.
+  # =========================================================================
+  - dimension: incoming_voltage
+    inputs:
+      - {name: voltage, type: enum, values: ["208 VAC 3ph+E 60 Hz", "460 VAC 3ph+E 60 Hz"]}
+    outputs:
+      "208 VAC 3ph+E 60 Hz":
+        phase_monitor: {part: "RM22TR31", desc: "Schneider Harmony 3-phase 200-240 V"}
+        branch_breaker_family: "schneider_multi9_m9f42xxx"
+        control_xfmr_primary_tap: "208 V"
+        pilot_voltage: "120 VAC"
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md row 56", note: "RM22TR31 + M9F42xxx mix"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row r55, r61-r67", note: "RM22TR31 + M9F42xxx mix"}
+      "460 VAC 3ph+E 60 Hz":
+        phase_monitor: {part: "RM22TR33", desc: "Schneider Harmony 3-phase 380-480 V"}
+        branch_breaker_family: "abb_st201m"
+        control_xfmr_primary_tap: "480 V"
+        pilot_voltage: "110-130 VAC LED (ABB CL2)"
+        evidence:
+          - {job: E1399, source: "E1399/feature-parts-association.md", note: "RM22TR33 + ST201M mix + CL2-513C/R"}
+          - {job: E1404, source: "E1404/feature-parts-association.md rows R48, R55-R66", note: "RM22TR33 + ST201M mix + CL2-513C/R"}
+    confidence: H
+
+  # =========================================================================
+  # AXIS 6 -- main breaker sizing from MOCP.
+  # =========================================================================
+  - dimension: main_breaker_sizing
+    inputs:
+      - {name: mocp_amps, type: float, source: "Load Calc MOCP cell"}
+      - {name: sccr_kaic, type: int, default: 65}
+    outputs:
+      lookup_table:
+        - {mocp_range: "<= 400 A", frame: "ABB XT5", part_root: "XT5NUxxx or XT5HUxxx", trip_range: "300-3000A adjustable"}
+        - {mocp_range: "400-800 A", frame: "ABB XT6", part_root: "XT6HU3800EF"}
+        - {mocp_range: "800-1000 A", frame: "ABB XT7", part_root: "XT7HU310DF"}
+      always_three_lines:
+        - {part: "main breaker frame", qty: 1}
+        - {part: "Cu/Al lug kit matched to wire ampacity (KXTnCUAL2X500K-3PC family)", qty: 1}
+        - {part: "rotary handle through-door (KXTnRHESTFP)", qty: 1}
+    evidence:
+      - {job: E1392, source: "E1392/feature-parts-association.md rows 35-37", note: "MOCP 399 A -> XT5N 400 A frame (adj 300-3000)"}
+      - {job: E1395, source: "E1395/feature-parts-association.md rows r27-r29", note: "MOCP 882 A -> XT7H 1000 A frame"}
+      - {job: E1399, source: "E1399/feature-parts-association.md", note: "MOCP 656 A -> XT6H 800 A frame"}
+      - {job: E1404, source: "E1404/feature-parts-association.md rows R16-R18", note: "MOCP 295 A -> XT5H 300 A frame"}
+    confidence: H
+
+  # =========================================================================
+  # AXIS 7 -- enclosure sizing from compressor count.
+  # =========================================================================
+  - dimension: enclosure_size
+    inputs:
+      - {name: compressor_count, type: int}
+      - {name: incoming_voltage, type: enum, values: ["208 V", "460 V"]}
+      - {name: customer_brand_preference, type: enum, values: [rittal, saginaw], default: saginaw}
+    outputs:
+      observed_mapping:
+        - {compressors: 5, voltage: "208 V", enclosure: "Rittal 1400x800x500-or-700 mm S/D", side_panels: "2x 1400x500h", subpanel: "2x 500x400 + 2x 700x400 partial mounting plates", job: E1392}
+        - {compressors: 7, voltage: "208 V", enclosure: "Saginaw SCE-726018FSD (72x60x18)", subpanel: "SCE-72P60F1", side_subpanel: "none", job: E1395}
+        - {compressors: 9, voltage: "460 V", enclosure: "Saginaw SCE-726018FSD (72x60x18)", subpanel: "SCE-72P60F1", side_subpanel: "none", job: E1399}
+        - {compressors: 6, voltage: "460 V", enclosure: "Saginaw SCE-724818FSD (72x48x18)", subpanel: "SCE-72P48F1", side_subpanel: "SCE-72SMP14", job: E1404}
+    rule:
+      - "Saginaw FSD family is default (3 of 4 jobs)."
+      - "Rittal is the E1392-only outlier; treat as customer-specified."
+      - "60-inch wide enclosure for >= 7 compressors; 48-inch for <= 6."
+      - "Side-mount subpanel added when terminal-block / I/O real estate exceeds back subpanel."
+    confidence: M
+
+  # =========================================================================
+  # AXIS 8 -- RFQ Panel Options toggles. Boolean flags from the RFQ
+  # Project Info sheet that add/remove BOM line items.
+  # =========================================================================
+  - dimension: rfq_panel_options
+    inputs:
+      - {name: ups, type: bool}
+      - {name: energy_meter_with_rogowski, type: bool}
+      - {name: ethernet_switch, type: bool}
+      - {name: machine_stop_button, type: bool}
+      - {name: spare_io_board, type: bool}
+      - {name: floor_legs_6in, type: bool}
+      - {name: ul_sticker, type: bool}
+    outputs:
+      ups:
+        when_true:
+          - {part: "2320283", desc: "Phoenix QUINT4-UPS 1 kVA", qty: 1}
+          - {part: "1274118", desc: "Phoenix 24 VDC 7 Ah battery module", qty: 2}
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md rows 67-68", note: "RFQ UPS = TRUE"}
+          - {job: E1395, source: "E1395/feature-parts-association.md row r69-r70", note: "RFQ UPS = TRUE; sized per customer"}
+          - {job: E1404, source: "E1404/feature-parts-association.md row R53-R54", note: "RFQ UPS = TRUE"}
+        when_false:
+          - "Omit both 2320283 and 1274118 rows."
+          - "E1399 case -- RFQ explicitly FALSE; no UPS in BOM."
+      energy_meter_with_rogowski:
+        when_true:
+          - {part: "2908307", desc: "Phoenix PM5011 energy meter", qty: 1}
+          - {part: "2910322", desc: "Phoenix Rogowski coil + cable kit (1 per phase)", qty: 3}
+        evidence:
+          - {job: E1392, source: "E1392/feature-parts-association.md rows 69-70", note: "Proposal scope; RFQ TRUE"}
+        when_false:
+          - "Omit both rows. E1399 RFQ FALSE, no meter."
+      ethernet_switch:
+        when_true:
+          - {part: "2702324", desc: "Phoenix FL Switch 2000 8-port managed", qty: 1}
+        notes: ["TRUE in all 4 sample jobs; treated as effectively invariant."]
+      machine_stop_button:
+        when_true:
+          - {part: "XB5AS8444", desc: "Schneider Harmony 40mm mushroom 2NC", qty: 1}
+        evidence:
+          - {job: E1399, source: "E1399/feature-parts-association.md", note: "Pre-checked TRUE in RFQ Panel Options"}
+        when_false:
+          - "Omit XB5AS8444. E1392 RFQ FALSE."
+      spare_io_board:
+        when_true:
+          danfoss_case:
+            - {part: "AK-XM 205A", desc: "extra AK-XM 205A as spare", qty: "+1 over base stack"}
+          copeland_case:
+            - {part: "810-3064", desc: "Copeland 88 I/O board (with spare terminals)", qty: 1}
+        evidence:
+          - {job: E1392, source: "E1392/process-docs.md § Panel Proposal", note: "Proposal calls out 88 I/O board with spare terminals"}
+          - {job: E1404, source: "E1404/feature-parts-association.md row R32 + R36", note: "Two AK-XM 205A rows with distinct tags = base + spare"}
+    confidence: H
+
+  # =========================================================================
+  # AXIS 9 -- VFD-vs-across-the-line per compressor. Subtracts items from
+  # the per-compressor template (the VFD owns trip and aux signaling).
+  # =========================================================================
+  - dimension: vfd_assignment_per_compressor
+    inputs:
+      - {name: compressor_tag, type: string}
+      - {name: is_vfd, type: bool}
+    outputs:
+      when_vfd:
+        omit:
+          - "trip-signal block (TSB) -- VFD owns the trip signal"
+          - "contactor aux block (CA4-10 / BCXML11 / BC-1 DWB)"
+        retain:
+          - "branch motor protector"
+          - "main contactor (still required for safety isolation downstream of VFD on some designs)"
+        notes:
+          - "VFD itself is NOT in the BOM. All 4 jobs treat VFDs as either customer-furnished or out-of-cabinet. Confirm before assuming."
+      when_across_the_line:
+        all_per_compressor_branch_items: "as defined in motor_protection_branch_topology"
+    evidence:
+      - {job: E1395, source: "E1395/part-feel.md § Patterns -- VFD asymmetry", note: "MT1 + LT1 VFD => CWM180 contactor aux (BCXML11) qty 3 not 4; TSB qty 2 not 3"}
+      - {job: E1404, source: "E1404/feature-parts-association.md row R22 CA4-10", note: "qty 12 = 3 non-VFD MT x 3 + 1 non-VFD LT x 3"}
+    confidence: H
+
+  # =========================================================================
+  # AXIS 10 -- door-pilot device family. Coupled to refrigeration controller
+  # family (see Axis 1) but called out separately because the pilot family
+  # is sometimes a customer preference independent of controller.
+  # =========================================================================
+  - dimension: door_pilot_family
+    inputs:
+      - {name: family, type: enum, values: [schneider_xb5_xb4, abb_cl2_m2ss]}
+    outputs:
+      schneider_xb5_xb4:
+        bom_rows:
+          - {part: "XB5AVG1", desc: "white pilot light, 22mm, 120 VAC LED -- RUNNING", qty: "= compressor_count"}
+          - {part: "XB5AVG4", desc: "red pilot light, 22mm, 120 VAC LED -- FAULT", qty: "= compressor_count"}
+          - {part: "XB4BD21", desc: "Schneider Harmony 2-pos maintained 22mm selector, 1 NO", qty: "= compressor_count"}
+        used_in: [E1392, E1395]
+      abb_cl2_m2ss:
+        bom_rows:
+          - {part: "CL2-513C", desc: "ABB clear pilot light 110-130 VAC -- RUNNING", qty: "= compressor_count"}
+          - {part: "CL2-513R", desc: "ABB red pilot light 110-130 VAC -- FAULT", qty: "= compressor_count"}
+          - {part: "M2SS2-10B + MCBH-00 + MCB-10", desc: "ABB selector switch + contact holder + NO contact (3 SKUs per switch)", qty: "= compressor_count"}
+          - {part: "E214-16-101", desc: "ABB group switch (alternate selector body, 16 A 1CO)", qty: "varies"}
+        used_in: [E1399, E1404]
+      legend_plate:
+        - {part: "1631 Carolina Laser 22mm rectangular 3-line", qty: "approx compressor_count x 3 (per device cluster), with site variation"}
+    evidence:
+      - {job: E1392, source: "E1392/feature-parts-association.md rows 57-58, 87, 61", note: "Schneider XB5/XB4 + 15 legend plates for 5 compressors"}
+      - {job: E1395, source: "E1395/feature-parts-association.md rows r58-r60, r84", note: "Schneider XB5/XB4 + 21 legend plates for 7 compressors"}
+      - {job: E1399, source: "E1399/feature-parts-association.md", note: "ABB CL2-513C/R + E214-16-101 + 18 legend plates"}
+      - {job: E1404, source: "E1404/feature-parts-association.md rows R55-R59, R82", note: "ABB CL2-513C/R + M2SS2-10B + 18 legend plates"}
+    confidence: H
+    notes:
+      - "Coupling observed: Copeland jobs => Schneider XB family; Danfoss 208V job (E1395) ALSO uses Schneider XB family; Danfoss 460V jobs use ABB CL2/M2SS. The split correlates with voltage, NOT controller. Suggests pilot family is voltage-driven."
+
+  # =========================================================================
+  # AXIS 11 -- local class-2 transformers for pressure-regulator circuits.
+  # Only E1392 has a discrete row; treat as per-regulator add-on.
+  # =========================================================================
+  - dimension: pressure_regulator_class2_xfmrs
+    inputs:
+      - {name: pressure_regulator_count, type: int, default: 0}
+    outputs:
+      per_regulator:
+        - {part: "TR50VA005", desc: "RIB 50 VA 120/24 VAC class 2 xfmr", qty_per: 1}
+        - {part: "UMBW-4C2-1", desc: "WEG 1-pole CB for xfmr primary", qty_per: 1}
+        - {part: "M9F42103", desc: "Schneider 1-pole 3A CB for xfmr secondary", qty_per: 1}
+    evidence:
+      - {job: E1392, source: "E1392/feature-parts-association.md § Per-pressure-regulator parts", note: "5 regulators x (TR50VA005 + UMBW-4C2-1 + M9F42103) = 5+5+5"}
+    confidence: L
+    notes: >
+      Single-job attestation. Could be a Copeland-only architecture
+      (Copeland MultiFlex talks to per-regulator class-2 power) or
+      could just be E1392-specific scope. Confirm before generalizing.
+
+  # =========================================================================
+  # AXIS 12 -- modbus bus termination (RS485 end-of-line resistors).
+  # Only E1392 has discrete BOM rows.
+  # =========================================================================
+  - dimension: modbus_eol_termination
+    inputs:
+      - {name: bus_count, type: int, default: 0}
+    outputs:
+      per_bus:
+        - {part: "594-SFR25H1201%TR", desc: "Mouser 120 ohm 1/2W 1% metal-film resistor", qty_per: 2, note: "one per bus end"}
+    evidence:
+      - {job: E1392, source: "E1392/feature-parts-association.md row 86 + part-feel row 86", note: "qty 2, tagged RES56101, RES59171 - 120 ohm EOL for modbus to regulators"}
+    confidence: L
+    notes: "Single-job; tied to Copeland modbus topology. Re-evaluate when another Copeland job lands."
+
+# End of selection-rules.yaml
