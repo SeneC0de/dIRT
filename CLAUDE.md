@@ -97,4 +97,10 @@ Setup work (renaming, splitting repos, identity changes) does **not** require an
 
 ### 6. Director identity
 
-`project.json` defines the Director for this 
+`project.json` defines the Director for this repo: Jones, `director_id: dirt`. The CLI walks up from `cwd` to find it; never hardcode `--director` unless overriding intentionally.
+
+## Tooling preferences for agents
+
+- Prefer `Read`, `Glob`, `Grep` over `Bash(cat|ls|find|grep)` — they're cheaper and structured.
+- Make independent tool calls in **parallel** within a single message. Reading three files serially is three turns; reading them in one batch is one.
+- For board operations, always use `python .github/scripts/agent_cli.py` (or `dcli`), never write to Firestore directly.

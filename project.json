@@ -8,4 +8,8 @@
   "scope": "personal",
   "principal": "Randall",
   "elevated": true,
-  "description": "Randall's personal Director. Spun off from director-pattern (which remains the company's general Director at C:/Users/randa/source/repos/director-pattern). dIRT runs Randall's personal pr
+  "description": "Randall's personal Director. Spun off from director-pattern (which remains the company's general Director at C:/Users/randa/source/repos/director-pattern). dIRT runs Randall's personal projects and has elevated authority over cross-cutting work in his stack. Pushes to Randall's personal GitHub.",
+  "repo_path": "C:\\Users\\randa\\source\\repos\\dIRT",
+  "github_remote": "https://github.com/SeneC0de/dIRT.git",
+  "github_org": "SeneC0de"
+}

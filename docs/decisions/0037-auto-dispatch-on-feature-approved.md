@@ -146,4 +146,8 @@ The shipped implementation refined the Decision in four ways worth recording so 
 
 - **Drafter scope discipline added to `write-adr`.** Adjacent improvement that pays for itself once auto-dispatch is live: the `write-adr` skill now instructs drafters to name specific files / modules / steps in the Decision section so the downstream coder's decomposition is mechanical. A Decision that reads "refactor the rate limiter" costs the coder turns guessing scope; "(1) swap token-bucket impl in `rate_limit.py`, (2) update callers in `api/` and `worker/`, (3) add benchmark" gives them three Tasks for free. The contract is soft — the coder will still decompose either way — but the turn-budget delta is real.
 
-- **One Cloud Run IAM grant needed at deploy.** Not anticipated in the Decision: deploying a new gen-2 Cloud Function creates a new Cloud Run service whose default IAM policy lacks the trigger SA's `roles/run.invoker`. The first deploy of `on-feature-approved` rejected every incoming ev
+- **One Cloud Run IAM grant needed at deploy.** Not anticipated in the Decision: deploying a new gen-2 Cloud Function creates a new Cloud Run service whose default IAM policy lacks the trigger SA's `roles/run.invoker`. The first deploy of `on-feature-approved` rejected every incoming event with `IAM principal lacks {run.routes.invoke} permission` for ~5 minutes before this was diagnosed. The fix is one extra `gcloud run services add-iam-policy-binding` call; the README's deploy command now includes it. `on-message-created` had this grant from its original deploy, which is why DMs continued working while approvals were broken. Worth folding into any future Cloud Function deploy script.
+
+---
+
+*Drafted by Head (drafter) under dASH — subtask `a1hU6f4ZK291CBa6JcvV`. Implementation amendments added by dASH Director after PR #19 merge.*

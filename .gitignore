@@ -36,4 +36,13 @@ web/.firebase/
 user.json
 
 # Scratch directory for runtime agent files (ADR drafts, intermediate results)
-.work
+.work/
+
+# Head git worktrees — created on demand by Director dispatches, not source code.
+# (Per agents/director.md "Head lifecycle"; these accumulate and pollute git status.)
+.claude/worktrees/
+
+# Stale dashboard hosting refs — should not be in dIRT anymore (moved to dASH),
+# but keep the ignores in case a worktree creates them.
+web/public/
+web/.firebase/
