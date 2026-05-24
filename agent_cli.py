@@ -27,13 +27,38 @@ def _find_project_json():
         p = p.parent
 
 
-def resolve_director_id(arg_director):
-    if arg_director:
-        return arg_director
+def _read_project_json():
+    """Return parsed project.json dict or None."""
     cfg = _find_project_json()
     if cfg:
-        d = json.loads(cfg.read_text(encoding="utf-8"))
-        return d.get("director_id") or d.get("name", "").lower()
+        try:
+            return json.loads(cfg.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            pass
+    return None
+
+
+def _project_id_from_cfg(d):
+    """Extract the project/director id from a project.json dict.
+    Accepts both new shape (project_id) and old shape (director_id)."""
+    return d.get("project_id") or d.get("director_id") or d.get("name", "").lower()
+
+
+def resolve_director_id(arg_director, arg_project=None):
+    """Resolve the effective director/project id.
+
+    Priority: --director > --project > project.json (project_id then director_id).
+    Both old-shape (director_id) and new-shape (project_id) project.json are accepted.
+    """
+    if arg_director:
+        return arg_director
+    if arg_project:
+        return arg_project
+    d = _read_project_json()
+    if d:
+        pid = _project_id_from_cfg(d)
+        if pid:
+            return pid
     raise SystemExit("No --director and no project.json found in cwd or any parent.")
 
 
@@ -42,18 +67,54 @@ def out(data):
 
 
 def cmd_info(args):
-    did = resolve_director_id(args.director)
-    out({"director_id": did, "director": db.get_director(did)})
+    did = resolve_director_id(args.director, getattr(args, "project", None))
+    cfg = _read_project_json()
+    system_root = bool(cfg.get("system_root")) if cfg else False
+
+    if system_root:
+        # System-root mode: Jones identity + owned_projects list with repo_path
+        jones_doc = db.get_director(did) or {}
+        owned = jones_doc.get("owned_projects") or []
+        projects = []
+        for pid in owned:
+            pdoc = db.get_director(pid) or {}
+            projects.append({
+                "project_id": pid,
+                "project_name": pdoc.get("project_name") or pdoc.get("director_name") or pid,
+                "repo_path": pdoc.get("repo_path"),
+                "github_remote": pdoc.get("github_remote"),
+                "commit_signature": pdoc.get("commit_signature"),
+            })
+        out({
+            "system_root": True,
+            "director_id": did,
+            "director_name": jones_doc.get("director_name") or "Jones",
+            "system_name": jones_doc.get("system_name") or cfg.get("system_name") or "dIRT",
+            "owned_projects": projects,
+        })
+    else:
+        # Project-repo mode: resolved project.json + Jones identity
+        jones_doc = db.get_director("dirt") or {}
+        out({
+            "system_root": False,
+            "director_id": did,
+            "project": db.get_director(did),
+            "project_json": cfg,
+            "jones": {
+                "director_id": "dirt",
+                "director_name": jones_doc.get("director_name") or "Jones",
+            },
+        })
 
 
 def cmd_status(args):
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     out(db.status(did))
 
 
 def cmd_add_feature(args):
     """Create a Story (Firestore collection: features, displayed as 'Story' in the UI)."""
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     author = _current_user()
     fid = db.add_feature(did, args.title, args.description, args.priority,
                          author=author,
@@ -66,7 +127,7 @@ def cmd_add_feature(args):
 
 def cmd_add_subtask(args):
     """Create a Task (Firestore collection: subtasks, displayed as 'Task' in the UI)."""
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     author = _current_user()
     sid = db.add_subtask(args.feature_id, args.title, args.description, args.priority,
                          director_id=did, author=author)
@@ -79,7 +140,7 @@ def cmd_archive(args):
     """Soft-archive a story or task. Use --unarchive to reverse.
 
     Determines kind automatically from which --*-id flag is set."""
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     archived = not args.unarchive
     if args.feature_id:
         db.archive_feature(args.feature_id, archived=archived)
@@ -98,7 +159,7 @@ def cmd_archive(args):
 
 
 def cmd_register_agent(args):
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     if args.role != "head" and args.head_type:
         raise SystemExit("--head-type is only valid with --role head")
     aid = db.register_agent(did, args.role, args.name, args.system_prompt, args.parent_id,
@@ -125,7 +186,7 @@ def cmd_start(args):
 
 
 def cmd_complete(args):
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     db.complete_subtask(args.subtask_id, args.output_ref)
     db.add_event(did, "subtask_completed", user=_current_user(), subtask_id=args.subtask_id,
                  payload=json.dumps({"output_ref": args.output_ref}))
@@ -133,7 +194,7 @@ def cmd_complete(args):
 
 
 def cmd_event(args):
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     eid = db.add_event(did, args.type, user=_current_user(), agent_id=args.agent_id,
                        feature_id=args.feature_id, subtask_id=args.subtask_id,
                        payload=args.payload)
@@ -141,7 +202,7 @@ def cmd_event(args):
 
 
 def cmd_list_features(args):
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     out(db.list_features(director_id=did, status=args.status, assignee=args.assignee,
                          label=args.label, due_before=args.due_before,
                          priority_max=args.priority_max,
@@ -149,7 +210,7 @@ def cmd_list_features(args):
 
 
 def cmd_list_subtasks(args):
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     out(db.list_subtasks(feature_id=args.feature_id, director_id=did, status=args.status,
                          assignee=args.assignee, label=args.label,
                          due_before=args.due_before, priority_max=args.priority_max,
@@ -157,13 +218,31 @@ def cmd_list_subtasks(args):
 
 
 def cmd_list_agents(args):
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     out(db.list_agents(did))
 
 
 def cmd_recent_events(args):
-    did = resolve_director_id(args.director)
-    out(db.recent_events(did, limit=args.limit))
+    did = resolve_director_id(args.director, getattr(args, "project", None))
+    all_projects = getattr(args, "all_projects", False)
+    if all_projects:
+        # Query events across all owned_projects of directors/dirt.
+        # Firestore REST _build_query doesn't support IN natively, so we issue
+        # one query per project id and merge/sort client-side.
+        jones_doc = db.get_director("dirt") or {}
+        owned = jones_doc.get("owned_projects") or []
+        # Always include "dirt" itself for system-level events
+        all_ids = list(dict.fromkeys(["dirt"] + list(owned)))
+        limit = args.limit
+        all_events = []
+        for pid in all_ids:
+            evts = db.recent_events(pid, limit=limit)
+            all_events.extend(evts)
+        # Sort by ts descending (ISO strings sort correctly)
+        all_events.sort(key=lambda e: e.get("ts") or "", reverse=True)
+        out(all_events[:limit])
+    else:
+        out(db.recent_events(did, limit=args.limit))
 
 
 def cmd_update_subtask(args):
@@ -173,7 +252,7 @@ def cmd_update_subtask(args):
     if not fields:
         raise SystemExit("update-subtask needs at least --status or --note")
     db.update_subtask(args.subtask_id, **fields)
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     db.add_event(did, "subtask_updated", user=_current_user(), subtask_id=args.subtask_id,
                  payload=json.dumps(fields))
     out({"ok": True})
@@ -223,7 +302,7 @@ def _build_edit_fields(args, doc):
 
 
 def cmd_edit_feature(args):
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     doc = db.get_feature(args.feature_id)
     if not doc:
         raise SystemExit(f"feature {args.feature_id} not found")
@@ -241,7 +320,7 @@ def cmd_edit_feature(args):
 
 
 def cmd_edit_subtask(args):
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     doc = db.get_subtask(args.subtask_id)
     if not doc:
         raise SystemExit(f"subtask {args.subtask_id} not found")
@@ -255,7 +334,7 @@ def cmd_edit_subtask(args):
 
 
 def cmd_delete_feature(args):
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     if not args.yes:
         raise SystemExit("destructive op — pass --yes to confirm")
     doc = db.get_feature(args.feature_id)
@@ -271,7 +350,7 @@ def cmd_delete_feature(args):
 
 
 def cmd_delete_subtask(args):
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     if not args.yes:
         raise SystemExit("destructive op — pass --yes to confirm")
     doc = db.get_subtask(args.subtask_id)
@@ -285,11 +364,31 @@ def cmd_delete_subtask(args):
 
 def cmd_list_directors(args):
     """List every Director doc in Firestore. No filtering by your own director_id — this is the
-    discovery query, useful for cleanup and for finding stale Director records."""
+    cross-Director discovery query, useful for cleanup and for finding stale Director records."""
     out([{"id": d.get("id"), "name": d.get("name"),
           "director_name": d.get("director_name"),
           "description": d.get("description")}
          for d in db.list_directors()])
+
+
+def cmd_list_projects(args):
+    """List all project records under Jones: directors where runtime == 'dirt', excluding dirt itself.
+
+    Returns: [{project_id, project_name, repo_path, github_remote, commit_signature}]
+    """
+    all_docs = db._runquery(db._build_query("directors", where=[("runtime", "==", "dirt")]))
+    projects = []
+    for d in all_docs:
+        if d.get("id") == "dirt":
+            continue  # exclude the dIRT root record itself
+        projects.append({
+            "project_id": d.get("id"),
+            "project_name": d.get("project_name") or d.get("director_name") or d.get("name") or d.get("id"),
+            "repo_path": d.get("repo_path"),
+            "github_remote": d.get("github_remote"),
+            "commit_signature": d.get("commit_signature"),
+        })
+    out(projects)
 
 
 def cmd_delete_director(args):
@@ -342,10 +441,8 @@ def cmd_kickoff(args):
     Claude reads the absolute paths and runs the startup ritual.
 
     Branding: if the resolved project.json has `"system_root": true`, the kickoff
-    text frames the agent as the system itself (e.g. dIRT) rather than as a single
-    project's Director. The director-pattern repo is the canonical system root;
-    other project repos fall through to the per-project Director persona via
-    `dcli info` step 4 of the ritual.
+    text frames the agent as Jones at the system root (dIRT), naming all owned_projects
+    and the most recent cross-project activity. Otherwise it's project-scoped.
     """
     pattern_home = Path(__file__).resolve().parent
     agents_dir = pattern_home / "agents"
@@ -356,6 +453,7 @@ def cmd_kickoff(args):
 
     system_root = False
     system_name = "dIRT"
+    cfg = {}
     if cfg_path:
         try:
             cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
@@ -365,25 +463,43 @@ def cmd_kickoff(args):
             pass
 
     if system_root:
+        # Fetch owned_projects from directors/dirt for the identity line
+        jones_doc = {}
+        owned_names = []
+        try:
+            jones_doc = db.get_director("dirt") or {}
+            owned = jones_doc.get("owned_projects") or []
+            owned_names = owned  # list of ids; use them directly as project short names
+        except Exception:
+            owned_names = []
+
+        projects_str = ", ".join(owned_names) if owned_names else "(no projects registered yet)"
         identity_line = (
-            f"You are **{system_name}** -- the overarching agentic system, launched from its root at "
-            f"`{repo_hint}`. You are not a single project's Director; you are the system that orchestrates "
-            f"every Director. When the User asks you to ship cross-cutting work (infra, doctrine, dashboard, "
-            f"analytics, the CLI itself), you act as {system_name}. When the User scopes you to a single "
-            f"project (per `dcli info`), you adopt that project's Director persona for that scope and revert "
-            f"to {system_name} afterward."
+            f"You are **Jones**, dIRT system root. You have the personality of Steve Jobs. "
+            f"You behave like him in every regard: exact, diligent, innovator, craftsman, unrelenting, "
+            f"high standard, never settles. You orchestrate Randall's dAPP projects: {projects_str}. "
+            f"Launched from `{repo_hint}`."
         )
         info_step = (
-            f"4. `dcli info` - this repo's project identity (used when work is scoped to a single project). "
-            f"From the system root, **do not adopt** the per-project Director character for cross-cutting "
-            f"work; keep speaking as {system_name}."
+            f"4. `dcli info` - system identity + owned_projects list. "
+            f"From the system root, **do not adopt** a per-project persona for cross-cutting work; "
+            f"speak as Jones / {system_name} throughout."
         )
+        events_step = "5. `dcli recent-events --all-projects --limit 10` and `dcli status`"
     else:
+        # Project-repo mode: scoped to this project, Jones identity visible
+        project_id = _project_id_from_cfg(cfg) if cfg else "unknown"
+        project_name = cfg.get("project_name") or cfg.get("name") or project_id
+        commit_sig = cfg.get("commit_signature") or {}
+        commit_name = commit_sig.get("name") or ""
+        commit_hint = f" Commit signature for this repo: {commit_name}." if commit_name else ""
         identity_line = (
-            f"You are now the **Director** of the project at `{repo_hint}` (identified by `project.json` "
-            f"in that folder). `dcli` is on PATH; use it for every CLI command."
+            f"You are **Jones**, scoped to **{project_name}** (`{project_id}`), "
+            f"located at `{repo_hint}`."
+            f"{commit_hint}"
         )
-        info_step = "4. `dcli info` - your project identity + character + personality (adopt them for the session)"
+        info_step = "4. `dcli info` - project identity + Jones identity (adopt project scope for the session)"
+        events_step = "5. `dcli status` and `dcli recent-events --limit 10`"
 
     msg = f"""# KICKOFF
 
@@ -395,7 +511,7 @@ Read these in order, then run the startup ritual described in director.md:
 2. `{head_md}` - canonical Head doctrine. Reference this path in every brief; don't restate it.
 3. `dcli whoami` - who is the User
 {info_step}
-5. `dcli status` and `dcli recent-events --limit 10`
+{events_step}
 
 Then greet the User by name and run the startup ritual. Don't restate the rules - they're in the docs.
 """
@@ -403,14 +519,15 @@ Then greet the User by name and run the startup ritual. Don't restate the rules 
 
 
 def cmd_init_director(args):
-    """Bootstrap this Director's Firestore record from project.json (idempotent)."""
+    """Bootstrap this Director's Firestore record from project.json (idempotent).
+    Accepts both new-shape (project_id) and old-shape (director_id) project.json."""
     cfg_path = _find_project_json()
     if not cfg_path:
         raise SystemExit("project.json not found in cwd or any parent.")
     cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
-    did = cfg.get("director_id") or cfg.get("name", "").lower()
+    did = _project_id_from_cfg(cfg)
     if not did:
-        raise SystemExit("director_id missing in project.json")
+        raise SystemExit("project_id (or director_id) missing in project.json")
     # repo_path defaults to the directory containing project.json — the project.json
     # now ships with the code, so its location IS the repo root.
     repo_path = cfg.get("repo_path") or str(cfg_path.parent)
@@ -479,13 +596,13 @@ def cmd_list_blocked(args):
     """Union of: features with status=blocked AND features whose sub-tasks are blocked.
 
     Bridges the historical gate-sub-task pattern with the new ADR-first feature-level pattern."""
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     out(db.list_blocked_rollup(did))
 
 
 def cmd_add_artifact(args):
     """Record a file, doc, or URL produced by this work as an artifact. Heads call this at done-lifecycle."""
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     aid = db.add_artifact(did, args.kind, args.path_or_url, description=args.description or "",
                           feature_id=args.feature_id, subtask_id=args.subtask_id, agent_id=args.agent_id)
     db.add_event(did, "artifact_added", user=_current_user(),
@@ -497,8 +614,22 @@ def cmd_add_artifact(args):
 
 def cmd_list_stuck(args):
     """Sub-tasks with status=in_progress older than --hours. Catches Heads that died mid-task."""
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     out(db.list_stuck(did, hours=args.hours))
+
+
+def cmd_cross_ref(args):
+    """Drop a note on another Director's board. Stored as a cross_ref event."""
+    did = resolve_director_id(args.director, getattr(args, "project", None))
+    eid = db.add_cross_ref(did, args.to, args.message, feature_id=args.feature_id,
+                           user=_current_user())
+    out({"event_id": eid, "from": did, "to": args.to})
+
+
+def cmd_list_cross_refs(args):
+    """Show cross-refs targeting this Director (incoming) and sent from this Director (outgoing)."""
+    did = resolve_director_id(args.director, getattr(args, "project", None))
+    out(db.list_cross_refs(did, limit=args.limit))
 
 
 # ----- ADR commands -----
@@ -552,6 +683,8 @@ def cmd_update_adr(args):
     if getattr(args, "body_file", None):
         with open(args.body_file, encoding="utf-8") as f:
             fields["body"] = f.read()
+    if getattr(args, "body", None) is not None:
+        fields["body"] = args.body
     if not fields: sys.exit("nothing to update — pass at least one --<field>")
     db.update_adr(args.adr_id, **fields)
     out({"adr_id": args.adr_id, "updated": list(fields.keys())})
@@ -565,7 +698,7 @@ def cmd_delete_adr(args):
 def cmd_mark_adr_accepted(args):
     """Flip an ADR's status to 'accepted' by number, then unblock any Stories
     on this Director's board that referenced it (status: blocked -> open)."""
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     n = int(args.adr_number)
     matched = [a for a in db.list_adrs(limit=500) if int(a.get("number", -1)) == n]
     if not matched:
@@ -609,7 +742,7 @@ def cmd_list_messages(args):
     they don't involve a director_id and never match this filter).
     """
     # Subparser --director (if supplied) wins over the global flag/project.json default.
-    did = resolve_director_id(getattr(args, "director_sub", None) or args.director)
+    did = resolve_director_id(getattr(args, "director_sub", None) or args.director, getattr(args, "project", None))
     # Pull recent messages and filter client-side. At current scale this is fine,
     # and it keeps us out of firestore_db.py per the scope guardrails on this branch.
     rows = db._runquery(db._build_query(
@@ -659,8 +792,13 @@ def cmd_list_messages(args):
 
 def cmd_approve_feature(args):
     """Unblock a feature whose ADR has been approved by the User. Sets status->open and emits a feature_approved event.
+
+    Additionally — per agents/director.md Step 4 — if the approved feature is ADR-linked
+    (`adr_url` set), broadcast a `cross_ref` event to every OTHER Director in `directors/`.
+    The broadcast is a best-effort side effect: any failure is logged and skipped so the
+    approve path itself never aborts.
     """
-    did = resolve_director_id(args.director)
+    did = resolve_director_id(args.director, getattr(args, "project", None))
     doc = db.get_feature(args.feature_id)
     if not doc:
         raise SystemExit(f"feature {args.feature_id} not found")
@@ -670,6 +808,46 @@ def cmd_approve_feature(args):
     db.add_event(did, "feature_approved", user=_current_user(), feature_id=args.feature_id,
                  payload=json.dumps({"title": doc.get("title"), "adr_url": doc.get("adr_url"), "approved_by": _current_user()}))
 
+    # --- ADR cross-ref broadcast (Step 4 doctrine) ---
+    # Re-read so we operate on post-update state, and so adr_url/adr_number reflect the stored doc.
+    feat = db.get_feature(args.feature_id) or doc
+    adr_url = feat.get("adr_url")
+    adr_num = feat.get("adr_number")
+    if adr_url:
+        try:
+            my_id = feat.get("director_id") or did
+            title = feat.get("title", "")
+            user_name = _current_user()
+            directors = db.list_directors() or []
+            recipients = [d for d in directors if d.get("id") != my_id]
+            adr_label = f"ADR {adr_num}" if adr_num else "ADR"
+            msg_template = (
+                f"{adr_label} '{title}' approved by {user_name}. "
+                f"Link: {adr_url}. Cross-ref from {my_id}."
+            )
+            sent = []
+            for other in recipients:
+                other_id = other.get("id")
+                if not other_id:
+                    continue
+                try:
+                    db.add_cross_ref(
+                        from_director_id=my_id,
+                        to_director_id=other_id,
+                        message=msg_template,
+                        feature_id=args.feature_id,
+                        user=user_name,
+                    )
+                    sent.append(other_id)
+                except Exception as broadcast_err:
+                    sys.stderr.write(
+                        f"warning: cross_ref broadcast to '{other_id}' failed: {broadcast_err}\n"
+                    )
+            # Print to stderr so we don't pollute the stdout JSON envelope the dashboard parses.
+            print(f"Broadcast {adr_label} approval to {len(sent)} directors: {sent}", file=sys.stderr)
+        except Exception as outer_err:
+            sys.stderr.write(f"warning: ADR cross_ref broadcast skipped: {outer_err}\n")
+
     out({"ok": True, "feature_id": args.feature_id})
 
 
@@ -677,13 +855,17 @@ def cmd_approve_feature(args):
 def main():
     p = argparse.ArgumentParser(description="Firestore-backed agent control CLI")
     p.add_argument("--director", default=None,
-                   help="director_id (defaults to project.json in cwd)")
+                   help="director_id (takes precedence over --project and project.json)")
+    p.add_argument("--project", default=None,
+                   help="project_id override — scopes board commands to the named project without "
+                        "changing cwd. Overridden by --director if both are given.")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("kickoff", help="Print the canonical Director startup message (with resolved doctrine paths). Run as the first command in a fresh Claude Code session.").set_defaults(func=cmd_kickoff)
     sub.add_parser("doctrine", help="Print absolute paths to the canonical director.md + the three head templates (head_drafter.md, head_coder.md, head_triage.md) as JSON.").set_defaults(func=cmd_doctrine)
     sub.add_parser("init-director", help="Bootstrap this Director's Firestore record from project.json").set_defaults(func=cmd_init_director)
-    sub.add_parser("list-directors", help="List every Director in Firestore.").set_defaults(func=cmd_list_directors)
+    sub.add_parser("list-directors", help="List every Director in Firestore (cross-Director discovery).").set_defaults(func=cmd_list_directors)
+    sub.add_parser("list-projects", help="List all project records under Jones (runtime='dirt', excluding dirt itself). Returns project_id, name, repo_path, github_remote, commit_signature.").set_defaults(func=cmd_list_projects)
 
     sp = sub.add_parser("delete-director", help="Permanently delete a Director and (with --cascade) its stories/tasks/agents.")
     sp.add_argument("--director-id", dest="director_id", required=True)
@@ -706,6 +888,12 @@ def main():
     sp = sub.add_parser("list-stuck", help="Sub-tasks in_progress for too long; suggests Head death.")
     sp.add_argument("--hours", type=float, default=8.0, help="threshold (default 8h)")
     sp.set_defaults(func=cmd_list_stuck)
+
+    sp = sub.add_parser("cross-ref", help="Drop a note on another Director's board.")
+    sp.add_argument("--to", required=True, help="target director_id (e.g. dweb)")
+    sp.add_argument("--message", required=True)
+    sp.add_argument("--feature-id", default=None, help="local feature this cross-ref relates to (optional)")
+    sp.set_defaults(func=cmd_cross_ref)
 
     # ----- ADR subcommands -----
     sp = sub.add_parser("add-adr", help="Create an ADR record in the top-level adrs collection.")
@@ -751,6 +939,9 @@ def main():
     sp.add_argument("--body-file", dest="body_file",
                     help="Path to a file containing the full ADR Markdown body. "
                          "Stored as the ADR's `body` field — the canonical content lives in Firestore.")
+    sp.add_argument("--body",
+                    help="Inline Markdown body for this ADR. Stored as the `body` field in Firestore "
+                         "(used by dASH for in-app rendering). Overrides --body-file if both are given.")
     sp.set_defaults(func=cmd_update_adr)
 
     sp = sub.add_parser("delete-adr", help="Hard-delete an ADR record.")
@@ -762,6 +953,9 @@ def main():
     sp.add_argument("--adr-number", required=True, dest="adr_number")
     sp.set_defaults(func=cmd_mark_adr_accepted)
 
+    sp = sub.add_parser("list-cross-refs", help="Incoming + outgoing cross-refs for this Director.")
+    sp.add_argument("--limit", type=int, default=50)
+    sp.set_defaults(func=cmd_list_cross_refs)
 
     sp = sub.add_parser("list-messages",
         help="Messages addressed to this Director (user_director DMs + director-to-director chats).")
@@ -918,6 +1112,10 @@ def main():
 
     sp = sub.add_parser("recent-events")
     sp.add_argument("--limit", type=int, default=25)
+    sp.add_argument("--all-projects", action="store_true", dest="all_projects",
+                    help="(System root only) Return events across all owned_projects of directors/dirt, "
+                         "not just the current project. Issues one query per project and merges results "
+                         "sorted by timestamp descending.")
     sp.set_defaults(func=cmd_recent_events)
 
     args = p.parse_args()
