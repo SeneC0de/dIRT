@@ -46,3 +46,15 @@ user.json
 # but keep the ignores in case a worktree creates them.
 web/public/
 web/.firebase/
+
+# Customer document intake — raw docs stay local; only structure + AI-extracted
+# derivatives (under extracted/) commit. Confidential by default.
+_intake/*/drawings/**
+_intake/*/boms/**
+_intake/*/config-sheets/**
+_intake/*/pos/**
+_intake/*/invoices/**
+_intake/*/order-acks/**
+_intake/*/jobs/**
+!_intake/**/.gitkeep
+!_intake/**/README.md
