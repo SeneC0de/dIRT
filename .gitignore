@@ -53,6 +53,7 @@ _intake/*/drawings/**
 _intake/*/boms/**
 _intake/*/config-sheets/**
 _intake/*/pos/**
+_intake/*/rfqs/**
 _intake/*/invoices/**
 _intake/*/order-acks/**
 _intake/*/jobs/**

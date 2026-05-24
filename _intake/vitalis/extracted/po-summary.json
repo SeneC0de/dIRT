@@ -1,0 +1,2732 @@
+{
+  "po_count": 30,
+  "unique_parts": 100,
+  "vendors": [
+    "Advantage Industrial Automation",
+    "Joseph Fanning",
+    "Saginaw Control & Engineering",
+    "Southern Controls, Inc.",
+    "Unknown",
+    "WAGO Corporation",
+    "WEG Electric Corp."
+  ],
+  "categories": [
+    "Buttons & Lights",
+    "Cable Management",
+    "Contactors",
+    "Controllers",
+    "Enclosure",
+    "FSD Enclosure",
+    "Fuses",
+    "Handles",
+    "Hardware",
+    "Heating",
+    "Labels",
+    "Networking",
+    "Pneumatics",
+    "Power Supplies",
+    "Protection Devices",
+    "Relays",
+    "Terminal Blocks",
+    "Transformers",
+    "Wire"
+  ],
+  "purchase_orders": [
+    {
+      "file": "Acknowledgement_5097050-00.pdf",
+      "lines": [],
+      "po_number": null,
+      "po_date": null,
+      "vendor_name": null
+    },
+    {
+      "file": "DAPP CONTROLS ORDER #1112805.pdf",
+      "lines": [],
+      "po_number": null,
+      "po_date": null,
+      "vendor_name": null
+    },
+    {
+      "file": "PO#1145 - SCE - dC E1370 021926.pdf",
+      "lines": [
+        {
+          "category": "Enclosure",
+          "part_number": "SCE-FK0618",
+          "description": "Floor kit, 6H X 18W X 9.123D",
+          "qty": 1,
+          "unit_cost": 149.31,
+          "amount": 149.31
+        },
+        {
+          "category": "Enclosure",
+          "part_number": "SCE-1816PC",
+          "description": "Polycarbonate",
+          "qty": null,
+          "unit_cost": null,
+          "amount": null
+        },
+        {
+          "category": "Enclosure",
+          "part_number": "19.41\"H",
+          "description": "x 18.68\"W x 11.90\"D, NEMA 4X",
+          "qty": 1,
+          "unit_cost": 162.12,
+          "amount": 162.12
+        },
+        {
+          "category": "Enclosure",
+          "part_number": "SCE-18P16PC",
+          "description": "Subpanel, Flat: 16.88\"H x 14.88\"W x 0.08\"D",
+          "qty": 1,
+          "unit_cost": 25.2,
+          "amount": 25.2
+        }
+      ],
+      "po_number": "1145",
+      "po_date": "02/16/2026",
+      "vendor_name": "Saginaw Control & Engineering"
+    },
+    {
+      "file": "PO#1149 - SC - dC E1370 021726.pdf",
+      "lines": [
+        {
+          "category": "Pneumatics",
+          "part_number": "SS5Y5-42-04-02T",
+          "description": "SS5Y5 5000 Series Bar Stock Manifold Individual Wiring",
+          "qty": 1,
+          "unit_cost": 49.73,
+          "amount": 49.73
+        },
+        {
+          "category": "Pneumatics",
+          "part_number": "SY5440-5LOZ",
+          "description": "SY5000 5 Port Solenoid Valve",
+          "qty": 4,
+          "unit_cost": 74.87,
+          "amount": 299.48
+        }
+      ],
+      "po_number": "1149",
+      "po_date": "02/17/2026",
+      "vendor_name": "Southern Controls, Inc."
+    },
+    {
+      "file": "PO#1151 - WEG - dC E1377, 1378, 1380 021926.pdf",
+      "lines": [
+        {
+          "category": "Transformers",
+          "part_number": "CPTW3K",
+          "description": "0-GSC TRANSFORMER, CPTW3K0-GSC, 120VAC/3kVA",
+          "qty": 3,
+          "unit_cost": 700.72,
+          "amount": 2102.16
+        },
+        {
+          "category": "Contactors",
+          "part_number": "CWCA0-31-00V18",
+          "description": "MINICONTACTOR BU CWCA0-31- 00V18",
+          "qty": 6,
+          "unit_cost": 13.1,
+          "amount": 78.6
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "UBW400H-FTU400-3A",
+          "description": "CIRCUIT BREAKER UBW400H- FTU400-3A",
+          "qty": 1,
+          "unit_cost": 854.7,
+          "amount": 854.7
+        },
+        {
+          "category": "Hardware",
+          "part_number": "EHC16X-UBW400",
+          "description": "NEMA 4X - ROTARY HANDLE + Mechanism + Shaft, 16\" - EHC16-UBW400",
+          "qty": 1,
+          "unit_cost": 101.02,
+          "amount": 101.02
+        },
+        {
+          "category": "Contactors",
+          "part_number": "MPW40-3-U010",
+          "description": "MOTOR PROTECTOR BU MPW40-3-U010",
+          "qty": 2,
+          "unit_cost": 46.58,
+          "amount": 93.16
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "CWB12-11-30D15",
+          "description": "Contactor, 12A, 3Pole",
+          "qty": 2,
+          "unit_cost": 28.73,
+          "amount": 57.46
+        },
+        {
+          "category": "Contactors",
+          "part_number": "CWB18-11-30D15",
+          "description": "CONTACTOR CWB18-11-30D15",
+          "qty": 1,
+          "unit_cost": 35.02,
+          "amount": 35.02
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "CLT32",
+          "description": "MPW40 Current Limiter Block CLT32 MPW40",
+          "qty": 3,
+          "unit_cost": 34.0,
+          "amount": 102.0
+        },
+        {
+          "category": "Terminal Blocks",
+          "part_number": "BFCA",
+          "description": "",
+          "qty": 40,
+          "unit_cost": null,
+          "amount": null
+        }
+      ],
+      "po_number": "1151",
+      "po_date": "02/17/2026",
+      "vendor_name": "WEG Electric Corp."
+    },
+    {
+      "file": "PO#1158 - SC - dC E1372 & Stock 030926.pdf",
+      "lines": [
+        {
+          "category": "Networking",
+          "part_number": "2702324",
+          "description": "Industrial Ethernet Switch, Managed, 8 Port 10/100Mbps, FL Switch 2000 Series",
+          "qty": 2,
+          "unit_cost": 375.24,
+          "amount": 750.48
+        }
+      ],
+      "po_number": "1158",
+      "po_date": "03/09/2026",
+      "vendor_name": "Southern Controls, Inc."
+    },
+    {
+      "file": "PO#1160 - WAGO - dC E1380 & Stock 030926.pdf",
+      "lines": [
+        {
+          "category": "Relays",
+          "part_number": "857-304",
+          "description": "Relay module; Nominal input",
+          "qty": null,
+          "unit_cost": null,
+          "amount": null
+        },
+        {
+          "category": "Hardware",
+          "part_number": "709-591",
+          "description": "Switchgear cabinet drawer; DIN 35-rail mount drawer; multicolored",
+          "qty": 10,
+          "unit_cost": 6.1,
+          "amount": 61.0
+        }
+      ],
+      "po_number": "1160",
+      "po_date": "03/06/2026",
+      "vendor_name": "WAGO Corporation"
+    },
+    {
+      "file": "PO#1164 - SCE - dC E1386 031326.pdf",
+      "lines": [
+        {
+          "category": "Enclosure",
+          "part_number": "SCE-724818FSD",
+          "description": "FSD Enclosure: 72.00\"H x 48.00\"W x 18.00\"D",
+          "qty": 1,
+          "unit_cost": 1761.24,
+          "amount": 1761.24
+        },
+        {
+          "category": "Enclosure",
+          "part_number": "SCE-72P48F1",
+          "description": "Subpanel, Full: 60\"H X 44\"W X 0.88\"D",
+          "qty": 1,
+          "unit_cost": 384.7,
+          "amount": 384.7
+        },
+        {
+          "category": "Enclosure",
+          "part_number": "SCE-72SMP14",
+          "description": "Subpanel, Side",
+          "qty": null,
+          "unit_cost": null,
+          "amount": null
+        }
+      ],
+      "po_number": "1164",
+      "po_date": "03/13/2026",
+      "vendor_name": "Saginaw Control & Engineering"
+    },
+    {
+      "file": "PO#1169 - GCC - dC 03182026_rev2.pdf",
+      "lines": [
+        {
+          "category": "Terminal Blocks",
+          "part_number": "KXT2CUAL1-3PC",
+          "description": "Terminal Kit, FCCUAL 14- 1/0AWG XT2, 3PC UL/CSA",
+          "qty": 1,
+          "unit_cost": 21.1857,
+          "amount": 21.19
+        },
+        {
+          "category": "Contactors",
+          "part_number": "AF65-30-11-13",
+          "description": "ABB CTR 3P 68A 100-250VAC/DC, 1/1",
+          "qty": 4,
+          "unit_cost": 234.528,
+          "amount": 6.0
+        },
+        {
+          "category": "Terminal Blocks",
+          "part_number": "CA4",
+          "description": "",
+          "qty": 10,
+          "unit_cost": null,
+          "amount": null
+        },
+        {
+          "category": "Contactors",
+          "part_number": "AF30-30-00-11",
+          "description": "ABB AF30 3P, 24- 60VAC, 20-60VDC",
+          "qty": 2,
+          "unit_cost": 149.871,
+          "amount": 4.0
+        },
+        {
+          "category": "Wire",
+          "part_number": "10-MTW-STR-BLACK",
+          "description": "WIRE, 10 AWG, MTW, STR, BLACK, PER FT (500 FT SPOOL)",
+          "qty": 500,
+          "unit_cost": 0.3945,
+          "amount": 197.25
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "XT2LU3030AF",
+          "description": "F000XXX XT2L, 125 TMF 30- 400 3P F F, UL/CSA",
+          "qty": 1,
+          "unit_cost": 1144.36,
+          "amount": 1144.36
+        }
+      ],
+      "po_number": "1169",
+      "po_date": "03/18/2026",
+      "vendor_name": "Joseph Fanning"
+    },
+    {
+      "file": "PO#1170 - AIA - dC 03202026.pdf",
+      "lines": [
+        {
+          "category": "Power Supplies",
+          "part_number": "1067327",
+          "description": "QUINT4- UPS/1AC/1AC/500 VA/USB - Uninterruptible Power supply",
+          "qty": 1,
+          "unit_cost": 1107.71,
+          "amount": 1107.71
+        },
+        {
+          "category": "Hardware",
+          "part_number": "1415759",
+          "description": "Service Outlet, Single Socket w/ RJ45 Conn, Door Mounted, 3A CB",
+          "qty": 2,
+          "unit_cost": 129.81,
+          "amount": 259.62
+        },
+        {
+          "category": "Labels",
+          "part_number": "0800395",
+          "description": "WMS 4,8 (30X9) RXL - Shrink sleeve",
+          "qty": 1,
+          "unit_cost": 986.81,
+          "amount": 986.81
+        },
+        {
+          "category": "Transformers",
+          "part_number": "9070T50",
+          "description": "0D19 Transformer, Type T, 500VA, 1 phase, 208/240/277/380/4 80V primary, 24V secondary, 115C rise",
+          "qty": 1,
+          "unit_cost": 428.62,
+          "amount": 428.62
+        }
+      ],
+      "po_number": "1170",
+      "po_date": "03/19/2026",
+      "vendor_name": "Advantage Industrial Automation"
+    },
+    {
+      "file": "PO#1171 - GCC - dC 03202026.pdf",
+      "lines": [
+        {
+          "category": "Transformers",
+          "part_number": "TR50VA0",
+          "description": "05US Transformer, 50VA, 120VAC to 24VAC, Class 2",
+          "qty": 5,
+          "unit_cost": 32.86,
+          "amount": 164.3
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "KLDR015",
+          "description": "LITTELFUSE 15A UL CLASS CC, TIME DELAY FUSE",
+          "qty": 4,
+          "unit_cost": 10.71,
+          "amount": 42.84
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "KLDR005",
+          "description": "LITTELFUSE 5A UL CLASS CC, TIME DELAY FUSE",
+          "qty": 4,
+          "unit_cost": 10.71,
+          "amount": 42.84
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "KLDR001",
+          "description": "LITTELFUSE 1A UL CLASS CC, TIME DELAY FUSE",
+          "qty": 10,
+          "unit_cost": 10.71,
+          "amount": 107.1
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "KLDR003",
+          "description": "LITTELFUSE 3A UL CLASS CC, TIME DELAY FUSE",
+          "qty": 4,
+          "unit_cost": 10.71,
+          "amount": 42.84
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "KLDR010",
+          "description": "LITTELFUSE 10A UL CLASS CC, TIME DELAY FUSE",
+          "qty": 4,
+          "unit_cost": 10.71,
+          "amount": 42.84
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "KLDR07.5",
+          "description": "LITTELFUSE 7.5A UL CLASS CC, TIME DELAY FUSE",
+          "qty": 6,
+          "unit_cost": 10.71,
+          "amount": 64.26
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "JTD500",
+          "description": "Fuse, Time-Delay, Class J, 600V, 500V, JTD Series",
+          "qty": 3,
+          "unit_cost": 300.99,
+          "amount": 902.97
+        }
+      ],
+      "po_number": "1171",
+      "po_date": "03/19/2026",
+      "vendor_name": "Joseph Fanning"
+    },
+    {
+      "file": "PO#1174 - GCC - dC 03242026.pdf",
+      "lines": [
+        {
+          "category": "Terminal Blocks",
+          "part_number": "KXT2CUAL1-3PC",
+          "description": "Terminal Kit, FCCUAL 14- 1/0AWG XT2, 3PC UL/CSA",
+          "qty": 6,
+          "unit_cost": 21.1857,
+          "amount": 127.11
+        }
+      ],
+      "po_number": "1174",
+      "po_date": "03/24/2026",
+      "vendor_name": "Joseph Fanning"
+    },
+    {
+      "file": "PO#1175 - AIA - dC 03242026.pdf",
+      "lines": [
+        {
+          "category": "Protection Devices",
+          "part_number": "M9F42130",
+          "description": "Miniature circuit breaker (MCB), Multi9 C60BP, 1P, 30A, C curve, 14kA (UL489), 10kA (IEC/EN 60947-2)",
+          "qty": 1,
+          "unit_cost": 25.1,
+          "amount": 25.1
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "M9F42104",
+          "description": "Miniature circuit breaker (MCB), Multi9 C60BP, 1P, 4A, C curve, 14kA (UL489), 10kA (IEC/EN 60947-2)",
+          "qty": 1,
+          "unit_cost": 22.71,
+          "amount": 22.71
+        }
+      ],
+      "po_number": "1175",
+      "po_date": "03/24/2026",
+      "vendor_name": "Advantage Industrial Automation"
+    },
+    {
+      "file": "PO#1178 - WAGO - dC E1391 032526.pdf",
+      "lines": [
+        {
+          "category": "Controllers",
+          "part_number": "752-9412",
+          "description": "Edge Computer; 2 x ETHERNET, 4 x USB, HDMI, DP; 16GB RAM; 128GB FLASH",
+          "qty": 1,
+          "unit_cost": 1443.64,
+          "amount": 1443.64
+        }
+      ],
+      "po_number": "1178",
+      "po_date": "03/25/2026",
+      "vendor_name": "WAGO Corporation"
+    },
+    {
+      "file": "PO#1188 - AIA - dC 04152026.pdf",
+      "lines": [
+        {
+          "category": "Power Supplies",
+          "part_number": "1274118",
+          "description": "UPS- BAT/PB/24DC/7AH - Battery module",
+          "qty": 2,
+          "unit_cost": 215.84,
+          "amount": 431.68
+        },
+        {
+          "category": "Power Supplies",
+          "part_number": "2320283",
+          "description": "QUINT4- UPS/1AC/1AC/1KV A - Uninterruptible Power supply",
+          "qty": 1,
+          "unit_cost": 1578.98,
+          "amount": 1578.98
+        },
+        {
+          "category": "Networking",
+          "part_number": "2702324",
+          "description": "Industrial Ethernet Switch, Managed, 8 Port 10/100Mbps, FL Switch 2000 Series",
+          "qty": 1,
+          "unit_cost": 381.0,
+          "amount": 381.0
+        },
+        {
+          "category": "Transformers",
+          "part_number": "9070T50",
+          "description": "0D19 Transformer, Type T, 500VA, 1 phase, 208/240/277/380/4 80V primary, 24V secondary, 115C rise",
+          "qty": 1,
+          "unit_cost": 428.62,
+          "amount": 428.62
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "9070FSC23",
+          "description": "Terminal cover, T25 to T5000, 2 covers per kit",
+          "qty": 1,
+          "unit_cost": 13.52,
+          "amount": 13.52
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "M9F42101",
+          "description": "Miniature circuit breaker (MCB), Multi9 C60BP, 1P, 1A, C curve, 14kA (UL489), 10kA (IEC/EN 60947-2)",
+          "qty": 2,
+          "unit_cost": 22.71,
+          "amount": 45.42
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "M9F42103",
+          "description": "Miniature circuit breaker (MCB), Multi9 C60BP, 1P, 3A, C curve, 14kA (UL489), 10kA (IEC/EN 60947-2)",
+          "qty": 5,
+          "unit_cost": 26.27,
+          "amount": 131.35
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "M9F42115",
+          "description": "Miniature circuit breaker (MCB), Multi9 C60BP, 1P, 15A, C curve, 14kA (UL489), 10kA (IEC/EN 60947-2)",
+          "qty": 1,
+          "unit_cost": 22.71,
+          "amount": 22.71
+        },
+        {
+          "category": "Relays",
+          "part_number": "RM22TR31",
+          "description": "3-phase control relay, Harmony Control Relays, 8A, 2CO, 200...240V AC",
+          "qty": 1,
+          "unit_cost": 118.54,
+          "amount": 118.54
+        }
+      ],
+      "po_number": "1188",
+      "po_date": "04/15/2026",
+      "vendor_name": "Advantage Industrial Automation"
+    },
+    {
+      "file": "PO#1189 - GCC - dC E1392 041526.pdf",
+      "lines": [
+        {
+          "category": "Protection Devices",
+          "part_number": "KLDR005",
+          "description": "LITTELFUSE 5A UL CLASS CC, TIME DELAY FUSE",
+          "qty": 4,
+          "unit_cost": 10.71,
+          "amount": 42.84
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "KLDR015",
+          "description": "LITTELFUSE 15A UL CLASS CC, TIME DELAY FUSE",
+          "qty": 4,
+          "unit_cost": 10.71,
+          "amount": 42.84
+        },
+        {
+          "category": "Transformers",
+          "part_number": "TR50VA0",
+          "description": "",
+          "qty": 5,
+          "unit_cost": null,
+          "amount": null
+        }
+      ],
+      "po_number": "1189",
+      "po_date": "04/15/2026",
+      "vendor_name": "Joseph Fanning"
+    },
+    {
+      "file": "PO#1194 - SC - dC E1392 041626.pdf",
+      "lines": [
+        {
+          "category": "Protection Devices",
+          "part_number": "XT5NU330AB",
+          "description": "FF000XXX XT5N 400 TMA 300-3000, 3P FF UL",
+          "qty": 1,
+          "unit_cost": 1027.33,
+          "amount": 1027.33
+        },
+        {
+          "category": "Terminal Blocks",
+          "part_number": "KXT5CUAL2X5",
+          "description": "00K-3PC ABB FCCUAL 2X2/0-500KCMIL XT5, 3PUL LUG KIT",
+          "qty": 1,
+          "unit_cost": 120.0,
+          "amount": 120.0
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "KXT5RHESTF",
+          "description": "P ABB Extended Handle Operating Mechanism, XT5",
+          "qty": 1,
+          "unit_cost": 100.0,
+          "amount": 100.0
+        }
+      ],
+      "po_number": "1194",
+      "po_date": "04/16/2026",
+      "vendor_name": "Southern Controls, Inc."
+    },
+    {
+      "file": "PO#1196 - AIA - dC E1370 041726.pdf",
+      "lines": [
+        {
+          "category": "Controllers",
+          "part_number": "1279135",
+          "description": "PLC-V8R/ETH-MP/BM | Communication module, Base module with multi-protocol connection (PROFINET, EtherNet/IPTM, and Modbus/TCP) with 8 I/Os, for plug-in connection to 8 digital or analog PLC-INTERFACE terminal blocks,",
+          "qty": 1,
+          "unit_cost": 280.0,
+          "amount": 280.0
+        },
+        {
+          "category": "Relays",
+          "part_number": "2900299",
+          "description": "PLC-RPT- 24DC/21,PLC-INTERFACE, consisting of PLC-BPT.../21 basic terminal block with push-in technology and plug-in miniature relay with power contact",
+          "qty": 4,
+          "unit_cost": 12.16,
+          "amount": 48.64
+        }
+      ],
+      "po_number": "1196",
+      "po_date": "04/17/2026",
+      "vendor_name": "Advantage Industrial Automation"
+    },
+    {
+      "file": "PO#1197 - SCE - dC E1395 & E1399 042426.pdf",
+      "lines": [
+        {
+          "category": "Enclosure",
+          "part_number": "SCE-726018FSD",
+          "description": "",
+          "qty": null,
+          "unit_cost": null,
+          "amount": null
+        },
+        {
+          "category": "FSD Enclosure",
+          "part_number": "72.00\"H x 60.00\"W x 18.00\"D",
+          "description": "",
+          "qty": 2,
+          "unit_cost": 1981.4,
+          "amount": 3962.8
+        },
+        {
+          "category": "Enclosure",
+          "part_number": "SCE-72P60F1",
+          "description": "Subpanel, Full: 60.00\"H x 56.00\"W x 0.88\"D",
+          "qty": 2,
+          "unit_cost": 445.31,
+          "amount": 890.62
+        }
+      ],
+      "po_number": "1197",
+      "po_date": "04/24/2026",
+      "vendor_name": "Saginaw Control & Engineering"
+    },
+    {
+      "file": "PO#1199 - GCC - dC 050126.pdf",
+      "lines": [
+        {
+          "category": "Wire",
+          "part_number": "18-MTW-STR-BRN-500",
+          "description": "WIRE 18 AWG, MTW STR, BROWN, PER FT (500 FT SPOOL) 2,000 0.0744 148.80",
+          "qty": null,
+          "unit_cost": null,
+          "amount": null
+        },
+        {
+          "category": "Wire",
+          "part_number": "18-MTW-STR-OR",
+          "description": "",
+          "qty": 500,
+          "unit_cost": null,
+          "amount": 2000.0
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "LPSC002Z",
+          "description": "Fuse Holder, Class CC, 30A, 2 Pole, Non-Indicating",
+          "qty": 4,
+          "unit_cost": 38.64,
+          "amount": 154.56
+        }
+      ],
+      "po_number": "1199",
+      "po_date": "05/01/2026",
+      "vendor_name": "Joseph Fanning"
+    },
+    {
+      "file": "PO#1200 - SC - dC E1370 042426.pdf",
+      "lines": [
+        {
+          "category": "Controllers",
+          "part_number": "EX260-SIL1",
+          "description": "IO LINK COMM MODULE PORT CLASS B",
+          "qty": 1,
+          "unit_cost": 201.84,
+          "amount": 201.84
+        },
+        {
+          "category": "Relays",
+          "part_number": "SY50M-1-1A-N11-NA",
+          "description": "SS5Y5 D SIDE END PLATE",
+          "qty": 1,
+          "unit_cost": 54.63,
+          "amount": 54.63
+        },
+        {
+          "category": "Relays",
+          "part_number": "SY50M-2-1DA-N7-NA",
+          "description": "MANIFOLD BLOCK ASSY, NATURAL COLOR",
+          "qty": 4,
+          "unit_cost": 18.63,
+          "amount": 74.52
+        },
+        {
+          "category": "Relays",
+          "part_number": "SY5100-5U1-NA",
+          "description": "VALVE, 5 PORT SOLENOID",
+          "qty": 4,
+          "unit_cost": 55.59,
+          "amount": 222.36
+        },
+        {
+          "category": "Hardware",
+          "part_number": "SY50M-3-1A-00-NA",
+          "description": "SS5Y5 U SIDE END PLATE",
+          "qty": 1,
+          "unit_cost": 15.75,
+          "amount": 15.75
+        }
+      ],
+      "po_number": "1200",
+      "po_date": "04/24/2026",
+      "vendor_name": "Southern Controls, Inc."
+    },
+    {
+      "file": "PO#1201 - SC - dC 050426.pdf",
+      "lines": [
+        {
+          "category": "Heating",
+          "part_number": "7T.81.0.000.230",
+          "description": "",
+          "qty": 3,
+          "unit_cost": null,
+          "amount": 4.0
+        },
+        {
+          "category": "Buttons & Lights",
+          "part_number": "7L.43.0.230.1100",
+          "description": "FINDER LED PANEL LIGHT, 110-240VAC/DC PUSH-IN",
+          "qty": 4,
+          "unit_cost": 62.75,
+          "amount": 251.0
+        },
+        {
+          "category": "Heating",
+          "part_number": "7F.02.0.000.300",
+          "description": "",
+          "qty": 0,
+          "unit_cost": null,
+          "amount": 4.0
+        },
+        {
+          "category": "Heating",
+          "part_number": "7F.21.8.120.310",
+          "description": "",
+          "qty": 0,
+          "unit_cost": null,
+          "amount": 4.0
+        },
+        {
+          "category": "Terminal Blocks",
+          "part_number": "KXT5CUAL2X50",
+          "description": "0K-3PC ABB FCCUAL 2X2/0-500KCMIL XT5, 3PUL LUG KIT",
+          "qty": 1,
+          "unit_cost": 120.0,
+          "amount": 120.0
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "XT7HU310DFF",
+          "description": "F000XXX XT7H 1000 E.DIP LSI 1000 3P UL",
+          "qty": 1,
+          "unit_cost": 4494.15,
+          "amount": 4494.15
+        },
+        {
+          "category": "Terminal Blocks",
+          "part_number": "KXT7CUAL4X50",
+          "description": "0K-3PC KIT FCCUAL4X500KCMIL XT7M F 3PCS",
+          "qty": 2,
+          "unit_cost": 297.49,
+          "amount": 594.98
+        },
+        {
+          "category": "Handles",
+          "part_number": "KXT7RHEST",
+          "description": "ABB KXT7RHEST RHE XT7 F/W STAND",
+          "qty": 1,
+          "unit_cost": 309.77,
+          "amount": 309.77
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "XT6HU3800EF",
+          "description": "F000XXX XT6H 800 E.DIP LSI 800 3P UL",
+          "qty": 1,
+          "unit_cost": 3478.87,
+          "amount": 3478.87
+        },
+        {
+          "category": "Terminal Blocks",
+          "part_number": "KXT6CUAL2X75",
+          "description": "0KCC-3 FRONT TERMINALS FOR CABLES IN COPPER-ALUMINIUM 2x 500-750 kcmil WITH VOLTAGE SOCKET 3pcs XT6 UL/CSA",
+          "qty": 2,
+          "unit_cost": 389.84,
+          "amount": 779.68
+        },
+        {
+          "category": "Handles",
+          "part_number": "KXT6RHESTFP",
+          "description": "ROTARY HANDLE OPERATING MECHANISM STANDARD ADJUSTABLE DEPTH L=500 MM WITH PADLOCK DEVICE AND DOOR INTERLOCK FOR C.BREAKER FIXED-PLUG-IN XT6",
+          "qty": 1,
+          "unit_cost": 302.83,
+          "amount": 302.83
+        },
+        {
+          "category": "Buttons & Lights",
+          "part_number": "CL2-513C",
+          "description": "Pilot light, Clear 110-130 VAC",
+          "qty": 9,
+          "unit_cost": 16.8,
+          "amount": 151.2
+        },
+        {
+          "category": "Buttons & Lights",
+          "part_number": "CL2-513R",
+          "description": "Pilot light, Red 110-130 VAC",
+          "qty": 9,
+          "unit_cost": 16.8,
+          "amount": 151.2
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "ST201M-C6",
+          "description": "MCB ST200M 1P C 6A, UL1077",
+          "qty": 9,
+          "unit_cost": 25.04,
+          "amount": 225.36
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "ST201M-C15",
+          "description": "MCB ST200M 1P C 15A, UL1077",
+          "qty": 2,
+          "unit_cost": 25.04,
+          "amount": 50.08
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "ST201M-C20",
+          "description": "MCB ST200M 1P C 20A, UL1077",
+          "qty": 2,
+          "unit_cost": 25.04,
+          "amount": 50.08
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "ST201M-C2",
+          "description": "MCB ST200M 1P C 2A, UL1077",
+          "qty": 19,
+          "unit_cost": 25.04,
+          "amount": 475.76
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "ST201M-C1",
+          "description": "MCB ST200M 1P C 1A, UL1077",
+          "qty": 2,
+          "unit_cost": 25.04,
+          "amount": 50.08
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "ST201M-C32",
+          "description": "MCB ST200M 1P C 32A, UL1077",
+          "qty": 1,
+          "unit_cost": 25.04,
+          "amount": 25.04
+        }
+      ],
+      "po_number": "1201",
+      "po_date": "05/04/2026",
+      "vendor_name": "Southern Controls, Inc."
+    },
+    {
+      "file": "PO#1202 - WAGO -dC 050126.pdf",
+      "lines": [
+        {
+          "category": "Relays",
+          "part_number": "788-512",
+          "description": "Relay module; Nominal input voltage: 24 VAC; 2 changeover contacts; Limiting continuous current: 8 A",
+          "qty": 10,
+          "unit_cost": 12.17,
+          "amount": 121.7
+        },
+        {
+          "category": "Relays",
+          "part_number": "788-515",
+          "description": "Relay module; Nominal input voltage: 115 VAC; 2 changeover contacts; Limiting continuous current: 8 A; Red status indicator;",
+          "qty": null,
+          "unit_cost": null,
+          "amount": null
+        },
+        {
+          "category": "Relays",
+          "part_number": "857-357",
+          "description": "Relay module; Nominal input voltage: 115 V AC/DC; 1 changeover contact; Limiting continuous current: 6 A; Yellow status indicator;",
+          "qty": null,
+          "unit_cost": null,
+          "amount": null
+        },
+        {
+          "category": "Relays",
+          "part_number": "857-304",
+          "description": "Relay module; Nominal input voltage: 24 VDC; 1 changeover contact; Limiting continuous current: 6 A; Yellow status indicator;",
+          "qty": null,
+          "unit_cost": null,
+          "amount": null
+        }
+      ],
+      "po_number": "1202",
+      "po_date": "05/01/2026",
+      "vendor_name": "WAGO Corporation"
+    },
+    {
+      "file": "PO#1203 - AIA - dC 050126.pdf",
+      "lines": [
+        {
+          "category": "Cable Management",
+          "part_number": "1415758",
+          "description": "H4X:C5FF:AC, HEAVYPORT B24 panel mounting base, with single locking latch, with plastic protective cover,1x RJ45 CAT5e (female/female)",
+          "qty": 2,
+          "unit_cost": 114.82,
+          "amount": 229.64
+        },
+        {
+          "category": "Networking",
+          "part_number": "2702324",
+          "description": "Industrial Ethernet Switch, Managed, 8 Port 10/100Mbps, FL Switch 2000 Series",
+          "qty": 2,
+          "unit_cost": 381.0,
+          "amount": 762.0
+        },
+        {
+          "category": "Buttons & Lights",
+          "part_number": "XB5AS8444",
+          "description": "Emergency stop switching off, Harmony XB5, plastic, red mushroom 40mm, 22mm, trigger latching turn to release, 2NC",
+          "qty": 1,
+          "unit_cost": 67.81,
+          "amount": 67.81
+        },
+        {
+          "category": "Terminal Blocks",
+          "part_number": "PK12GTA",
+          "description": "Load center accessory, QO/Homeline, ground bar kit, 12 terminals",
+          "qty": 6,
+          "unit_cost": 9.48,
+          "amount": 56.88
+        },
+        {
+          "category": "Power Supplies",
+          "part_number": "2320283",
+          "description": "QUINT4-UPS/1AC/1AC/1KVA - Uninterruptible Power supply",
+          "qty": 1,
+          "unit_cost": 1578.98,
+          "amount": 1578.98
+        },
+        {
+          "category": "Power Supplies",
+          "part_number": "1274118",
+          "description": "UPS-BAT/PB/24DC/7AH - Battery module",
+          "qty": 2,
+          "unit_cost": 215.84,
+          "amount": 431.68
+        },
+        {
+          "category": "Relays",
+          "part_number": "RM22TR31",
+          "description": "3-phase control relay, Harmony Control Relays, 8A, 2CO, 200...240V AC",
+          "qty": 1,
+          "unit_cost": 118.54,
+          "amount": 118.54
+        },
+        {
+          "category": "Transformers",
+          "part_number": "9070T500",
+          "description": "D19 Transformer, Type T, 500VA, 1 phase, 208/240/277/380/480V primary, 24V secondary, 115C rise",
+          "qty": 2,
+          "unit_cost": 428.62,
+          "amount": 857.24
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "M9F42120",
+          "description": "Miniature circuit breaker (MCB), Multi9 C60BP, 1P, 20A, C curve, 14kA (UL489), 10kA (IEC/EN 60947-2)",
+          "qty": 1,
+          "unit_cost": 22.71,
+          "amount": 22.71
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "M9F42102",
+          "description": "Miniature circuit breaker (MCB), Multi9 C60BP, 1P, 2A, C curve, 14kA (UL489), 10kA (IEC/EN 60947-2)",
+          "qty": 7,
+          "unit_cost": 22.71,
+          "amount": 158.97
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "M9F42104",
+          "description": "Miniature circuit breaker (MCB), Multi9 C60BP, 1P, 4A, C curve, 14kA (UL489), 10kA (IEC/EN 60947-2)",
+          "qty": 1,
+          "unit_cost": 22.71,
+          "amount": 22.71
+        }
+      ],
+      "po_number": "1203",
+      "po_date": "05/01/2026",
+      "vendor_name": "Advantage Industrial Automation"
+    },
+    {
+      "file": "PO#1206 - GCC - dC E1356 050426.pdf",
+      "lines": [
+        {
+          "category": "Fuses",
+          "part_number": "JTD150",
+          "description": "Littlefuse 150A UL Class J Time Delay Fuse",
+          "qty": 3,
+          "unit_cost": 76.5714,
+          "amount": 229.71
+        }
+      ],
+      "po_number": "1206",
+      "po_date": "05/04/2026",
+      "vendor_name": "Joseph Fanning"
+    },
+    {
+      "file": "PO#1208 - WAGO - dC 050526.pdf",
+      "lines": [
+        {
+          "category": "Terminal Blocks",
+          "part_number": "2002",
+          "description": "",
+          "qty": 3201,
+          "unit_cost": null,
+          "amount": null
+        },
+        {
+          "category": "Terminal Blocks",
+          "part_number": "2002",
+          "description": "",
+          "qty": 3227,
+          "unit_cost": null,
+          "amount": 120.0
+        },
+        {
+          "category": "Terminal Blocks",
+          "part_number": "221-413",
+          "description": "LEVER-NUTS® splicing connector; 3-conductor with operating levers; 24-12 AWG; transparent housing; Box of 50 pieces",
+          "qty": 1,
+          "unit_cost": 13.8645,
+          "amount": 13.86
+        }
+      ],
+      "po_number": "1208",
+      "po_date": "05/04/2026",
+      "vendor_name": "WAGO Corporation"
+    },
+    {
+      "file": "PO#1209 - SC - dC E1377 050526.pdf",
+      "lines": [
+        {
+          "category": "Protection Devices",
+          "part_number": "1SCA022776R",
+          "description": "",
+          "qty": 7200,
+          "unit_cost": null,
+          "amount": 2.0
+        },
+        {
+          "category": "Terminal Blocks",
+          "part_number": "3201013",
+          "description": "AI-TWIN 2X 6 -14 YE - Ferrule, Yellow (Bag of 100)",
+          "qty": 1,
+          "unit_cost": 93.0,
+          "amount": 93.0
+        }
+      ],
+      "po_number": "1209",
+      "po_date": "05/05/2026",
+      "vendor_name": "Southern Controls, Inc."
+    },
+    {
+      "file": "PO#1212 - GCC - dC Stock 050826.pdf",
+      "lines": [
+        {
+          "category": "Wire",
+          "part_number": "500 MCM-THHN-STR-BLACK",
+          "description": "WIRE, 500 MCM, THHN, STR, BLACK, PRICED PER FT",
+          "qty": 20,
+          "unit_cost": 19.9233,
+          "amount": 398.47
+        },
+        {
+          "category": "Wire",
+          "part_number": "2/0-THHN-STR-BLACK",
+          "description": "Wire, 2/0 AWG, 19 STR THHN, Black (Priced per ft)",
+          "qty": 40,
+          "unit_cost": 5.4017,
+          "amount": 216.07
+        }
+      ],
+      "po_number": "1212",
+      "po_date": "05/08/2026",
+      "vendor_name": "Joseph Fanning"
+    },
+    {
+      "file": "PO#1215 - GCC - dC Stock 051326.pdf",
+      "lines": [
+        {
+          "category": "Protection Devices",
+          "part_number": "KLDR001",
+          "description": "LITTELFUSE 1A UL CLASS CC, TIME DELAY FUSE",
+          "qty": 20,
+          "unit_cost": 10.71,
+          "amount": 214.2
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "LPSC0002Z",
+          "description": "Fuse Holder, Class CC, 30A, 2 Pole, Non-Indicating",
+          "qty": 15,
+          "unit_cost": 38.64,
+          "amount": 579.6
+        }
+      ],
+      "po_number": "1215",
+      "po_date": "05/13/2026",
+      "vendor_name": "Joseph Fanning"
+    },
+    {
+      "file": "PO#1217 - AIA - dC E1395 051926.pdf",
+      "lines": [
+        {
+          "category": "Protection Devices",
+          "part_number": "M9F42102",
+          "description": "Miniature circuit breaker (MCB), Multi9 C60BP, 1P, 2A, C curve, 14kA (UL489), 10kA (IEC/EN 60947-2)",
+          "qty": 1,
+          "unit_cost": 22.71,
+          "amount": 22.71
+        },
+        {
+          "category": "Protection Devices",
+          "part_number": "M9F42104",
+          "description": "Miniature circuit breaker (MCB), Multi9 C60BP, 1P, 4A, C curve, 14kA (UL489), 10kA (IEC/EN 60947-2)",
+          "qty": 1,
+          "unit_cost": 22.71,
+          "amount": 22.71
+        },
+        {
+          "category": "Wire",
+          "part_number": "3240547",
+          "description": "Spade Terminal, Insulated, 16-14AWG, 0.5mm Spade",
+          "qty": 50,
+          "unit_cost": 0.32,
+          "amount": 16.0
+        }
+      ],
+      "po_number": "1217",
+      "po_date": "05/19/2026",
+      "vendor_name": "Advantage Industrial Automation"
+    }
+  ],
+  "parts_catalog": {
+    "SCE-FK0618": {
+      "part_number": "SCE-FK0618",
+      "category": "Enclosure",
+      "description": "Floor kit, 6H X 18W X 9.123D",
+      "prices": [
+        {
+          "vendor": "Saginaw Control & Engineering",
+          "unit_cost": 149.31,
+          "qty": 1,
+          "po_number": "1145",
+          "po_date": "02/16/2026"
+        }
+      ]
+    },
+    "SCE-1816PC": {
+      "part_number": "SCE-1816PC",
+      "category": "Enclosure",
+      "description": "Polycarbonate",
+      "prices": [
+        {
+          "vendor": "Saginaw Control & Engineering",
+          "unit_cost": null,
+          "qty": null,
+          "po_number": "1145",
+          "po_date": "02/16/2026"
+        }
+      ]
+    },
+    "SCE-18P16PC": {
+      "part_number": "SCE-18P16PC",
+      "category": "Enclosure",
+      "description": "Subpanel, Flat: 16.88\"H x 14.88\"W x 0.08\"D",
+      "prices": [
+        {
+          "vendor": "Saginaw Control & Engineering",
+          "unit_cost": 25.2,
+          "qty": 1,
+          "po_number": "1145",
+          "po_date": "02/16/2026"
+        }
+      ]
+    },
+    "SS5Y5-42-04-02T": {
+      "part_number": "SS5Y5-42-04-02T",
+      "category": "Pneumatics",
+      "description": "SS5Y5 5000 Series Bar Stock Manifold Individual Wiring",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 49.73,
+          "qty": 1,
+          "po_number": "1149",
+          "po_date": "02/17/2026"
+        }
+      ]
+    },
+    "SY5440-5LOZ": {
+      "part_number": "SY5440-5LOZ",
+      "category": "Pneumatics",
+      "description": "SY5000 5 Port Solenoid Valve",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 74.87,
+          "qty": 4,
+          "po_number": "1149",
+          "po_date": "02/17/2026"
+        }
+      ]
+    },
+    "CPTW3K": {
+      "part_number": "CPTW3K",
+      "category": "Transformers",
+      "description": "0-GSC TRANSFORMER, CPTW3K0-GSC, 120VAC/3kVA",
+      "prices": [
+        {
+          "vendor": "WEG Electric Corp.",
+          "unit_cost": 700.72,
+          "qty": 3,
+          "po_number": "1151",
+          "po_date": "02/17/2026"
+        }
+      ]
+    },
+    "CWCA0-31-00V18": {
+      "part_number": "CWCA0-31-00V18",
+      "category": "Contactors",
+      "description": "MINICONTACTOR BU CWCA0-31- 00V18",
+      "prices": [
+        {
+          "vendor": "WEG Electric Corp.",
+          "unit_cost": 13.1,
+          "qty": 6,
+          "po_number": "1151",
+          "po_date": "02/17/2026"
+        }
+      ]
+    },
+    "UBW400H-FTU400-3A": {
+      "part_number": "UBW400H-FTU400-3A",
+      "category": "Protection Devices",
+      "description": "CIRCUIT BREAKER UBW400H- FTU400-3A",
+      "prices": [
+        {
+          "vendor": "WEG Electric Corp.",
+          "unit_cost": 854.7,
+          "qty": 1,
+          "po_number": "1151",
+          "po_date": "02/17/2026"
+        }
+      ]
+    },
+    "EHC16X-UBW400": {
+      "part_number": "EHC16X-UBW400",
+      "category": "Hardware",
+      "description": "NEMA 4X - ROTARY HANDLE + Mechanism + Shaft, 16\" - EHC16-UBW400",
+      "prices": [
+        {
+          "vendor": "WEG Electric Corp.",
+          "unit_cost": 101.02,
+          "qty": 1,
+          "po_number": "1151",
+          "po_date": "02/17/2026"
+        }
+      ]
+    },
+    "MPW40-3-U010": {
+      "part_number": "MPW40-3-U010",
+      "category": "Contactors",
+      "description": "MOTOR PROTECTOR BU MPW40-3-U010",
+      "prices": [
+        {
+          "vendor": "WEG Electric Corp.",
+          "unit_cost": 46.58,
+          "qty": 2,
+          "po_number": "1151",
+          "po_date": "02/17/2026"
+        }
+      ]
+    },
+    "CWB12-11-30D15": {
+      "part_number": "CWB12-11-30D15",
+      "category": "Protection Devices",
+      "description": "Contactor, 12A, 3Pole",
+      "prices": [
+        {
+          "vendor": "WEG Electric Corp.",
+          "unit_cost": 28.73,
+          "qty": 2,
+          "po_number": "1151",
+          "po_date": "02/17/2026"
+        }
+      ]
+    },
+    "CWB18-11-30D15": {
+      "part_number": "CWB18-11-30D15",
+      "category": "Contactors",
+      "description": "CONTACTOR CWB18-11-30D15",
+      "prices": [
+        {
+          "vendor": "WEG Electric Corp.",
+          "unit_cost": 35.02,
+          "qty": 1,
+          "po_number": "1151",
+          "po_date": "02/17/2026"
+        }
+      ]
+    },
+    "CLT32": {
+      "part_number": "CLT32",
+      "category": "Protection Devices",
+      "description": "MPW40 Current Limiter Block CLT32 MPW40",
+      "prices": [
+        {
+          "vendor": "WEG Electric Corp.",
+          "unit_cost": 34.0,
+          "qty": 3,
+          "po_number": "1151",
+          "po_date": "02/17/2026"
+        }
+      ]
+    },
+    "BFCA": {
+      "part_number": "BFCA",
+      "category": "Terminal Blocks",
+      "description": "",
+      "prices": [
+        {
+          "vendor": "WEG Electric Corp.",
+          "unit_cost": null,
+          "qty": 40,
+          "po_number": "1151",
+          "po_date": "02/17/2026"
+        }
+      ]
+    },
+    "2702324": {
+      "part_number": "2702324",
+      "category": "Networking",
+      "description": "Industrial Ethernet Switch, Managed, 8 Port 10/100Mbps, FL Switch 2000 Series",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 375.24,
+          "qty": 2,
+          "po_number": "1158",
+          "po_date": "03/09/2026"
+        },
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 381.0,
+          "qty": 1,
+          "po_number": "1188",
+          "po_date": "04/15/2026"
+        },
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 381.0,
+          "qty": 2,
+          "po_number": "1203",
+          "po_date": "05/01/2026"
+        }
+      ]
+    },
+    "857-304": {
+      "part_number": "857-304",
+      "category": "Relays",
+      "description": "Relay module; Nominal input",
+      "prices": [
+        {
+          "vendor": "WAGO Corporation",
+          "unit_cost": null,
+          "qty": null,
+          "po_number": "1160",
+          "po_date": "03/06/2026"
+        },
+        {
+          "vendor": "WAGO Corporation",
+          "unit_cost": null,
+          "qty": null,
+          "po_number": "1202",
+          "po_date": "05/01/2026"
+        }
+      ]
+    },
+    "709-591": {
+      "part_number": "709-591",
+      "category": "Hardware",
+      "description": "Switchgear cabinet drawer; DIN 35-rail mount drawer; multicolored",
+      "prices": [
+        {
+          "vendor": "WAGO Corporation",
+          "unit_cost": 6.1,
+          "qty": 10,
+          "po_number": "1160",
+          "po_date": "03/06/2026"
+        }
+      ]
+    },
+    "SCE-724818FSD": {
+      "part_number": "SCE-724818FSD",
+      "category": "Enclosure",
+      "description": "FSD Enclosure: 72.00\"H x 48.00\"W x 18.00\"D",
+      "prices": [
+        {
+          "vendor": "Saginaw Control & Engineering",
+          "unit_cost": 1761.24,
+          "qty": 1,
+          "po_number": "1164",
+          "po_date": "03/13/2026"
+        }
+      ]
+    },
+    "SCE-72P48F1": {
+      "part_number": "SCE-72P48F1",
+      "category": "Enclosure",
+      "description": "Subpanel, Full: 60\"H X 44\"W X 0.88\"D",
+      "prices": [
+        {
+          "vendor": "Saginaw Control & Engineering",
+          "unit_cost": 384.7,
+          "qty": 1,
+          "po_number": "1164",
+          "po_date": "03/13/2026"
+        }
+      ]
+    },
+    "SCE-72SMP14": {
+      "part_number": "SCE-72SMP14",
+      "category": "Enclosure",
+      "description": "Subpanel, Side",
+      "prices": [
+        {
+          "vendor": "Saginaw Control & Engineering",
+          "unit_cost": null,
+          "qty": null,
+          "po_number": "1164",
+          "po_date": "03/13/2026"
+        }
+      ]
+    },
+    "KXT2CUAL1-3PC": {
+      "part_number": "KXT2CUAL1-3PC",
+      "category": "Terminal Blocks",
+      "description": "Terminal Kit, FCCUAL 14- 1/0AWG XT2, 3PC UL/CSA",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 21.1857,
+          "qty": 1,
+          "po_number": "1169",
+          "po_date": "03/18/2026"
+        },
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 21.1857,
+          "qty": 6,
+          "po_number": "1174",
+          "po_date": "03/24/2026"
+        }
+      ]
+    },
+    "AF65-30-11-13": {
+      "part_number": "AF65-30-11-13",
+      "category": "Contactors",
+      "description": "ABB CTR 3P 68A 100-250VAC/DC, 1/1",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 234.528,
+          "qty": 4,
+          "po_number": "1169",
+          "po_date": "03/18/2026"
+        }
+      ]
+    },
+    "CA4": {
+      "part_number": "CA4",
+      "category": "Terminal Blocks",
+      "description": "",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": null,
+          "qty": 10,
+          "po_number": "1169",
+          "po_date": "03/18/2026"
+        }
+      ]
+    },
+    "AF30-30-00-11": {
+      "part_number": "AF30-30-00-11",
+      "category": "Contactors",
+      "description": "ABB AF30 3P, 24- 60VAC, 20-60VDC",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 149.871,
+          "qty": 2,
+          "po_number": "1169",
+          "po_date": "03/18/2026"
+        }
+      ]
+    },
+    "10-MTW-STR-BLACK": {
+      "part_number": "10-MTW-STR-BLACK",
+      "category": "Wire",
+      "description": "WIRE, 10 AWG, MTW, STR, BLACK, PER FT (500 FT SPOOL)",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 0.3945,
+          "qty": 500,
+          "po_number": "1169",
+          "po_date": "03/18/2026"
+        }
+      ]
+    },
+    "XT2LU3030AF": {
+      "part_number": "XT2LU3030AF",
+      "category": "Protection Devices",
+      "description": "F000XXX XT2L, 125 TMF 30- 400 3P F F, UL/CSA",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 1144.36,
+          "qty": 1,
+          "po_number": "1169",
+          "po_date": "03/18/2026"
+        }
+      ]
+    },
+    "1067327": {
+      "part_number": "1067327",
+      "category": "Power Supplies",
+      "description": "QUINT4- UPS/1AC/1AC/500 VA/USB - Uninterruptible Power supply",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 1107.71,
+          "qty": 1,
+          "po_number": "1170",
+          "po_date": "03/19/2026"
+        }
+      ]
+    },
+    "1415759": {
+      "part_number": "1415759",
+      "category": "Hardware",
+      "description": "Service Outlet, Single Socket w/ RJ45 Conn, Door Mounted, 3A CB",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 129.81,
+          "qty": 2,
+          "po_number": "1170",
+          "po_date": "03/19/2026"
+        }
+      ]
+    },
+    "0800395": {
+      "part_number": "0800395",
+      "category": "Labels",
+      "description": "WMS 4,8 (30X9) RXL - Shrink sleeve",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 986.81,
+          "qty": 1,
+          "po_number": "1170",
+          "po_date": "03/19/2026"
+        }
+      ]
+    },
+    "9070T50": {
+      "part_number": "9070T50",
+      "category": "Transformers",
+      "description": "0D19 Transformer, Type T, 500VA, 1 phase, 208/240/277/380/4 80V primary, 24V secondary, 115C rise",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 428.62,
+          "qty": 1,
+          "po_number": "1170",
+          "po_date": "03/19/2026"
+        },
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 428.62,
+          "qty": 1,
+          "po_number": "1188",
+          "po_date": "04/15/2026"
+        }
+      ]
+    },
+    "TR50VA0": {
+      "part_number": "TR50VA0",
+      "category": "Transformers",
+      "description": "05US Transformer, 50VA, 120VAC to 24VAC, Class 2",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 32.86,
+          "qty": 5,
+          "po_number": "1171",
+          "po_date": "03/19/2026"
+        },
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": null,
+          "qty": 5,
+          "po_number": "1189",
+          "po_date": "04/15/2026"
+        }
+      ]
+    },
+    "KLDR015": {
+      "part_number": "KLDR015",
+      "category": "Protection Devices",
+      "description": "LITTELFUSE 15A UL CLASS CC, TIME DELAY FUSE",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 10.71,
+          "qty": 4,
+          "po_number": "1171",
+          "po_date": "03/19/2026"
+        },
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 10.71,
+          "qty": 4,
+          "po_number": "1189",
+          "po_date": "04/15/2026"
+        }
+      ]
+    },
+    "KLDR005": {
+      "part_number": "KLDR005",
+      "category": "Protection Devices",
+      "description": "LITTELFUSE 5A UL CLASS CC, TIME DELAY FUSE",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 10.71,
+          "qty": 4,
+          "po_number": "1171",
+          "po_date": "03/19/2026"
+        },
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 10.71,
+          "qty": 4,
+          "po_number": "1189",
+          "po_date": "04/15/2026"
+        }
+      ]
+    },
+    "KLDR001": {
+      "part_number": "KLDR001",
+      "category": "Protection Devices",
+      "description": "LITTELFUSE 1A UL CLASS CC, TIME DELAY FUSE",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 10.71,
+          "qty": 10,
+          "po_number": "1171",
+          "po_date": "03/19/2026"
+        },
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 10.71,
+          "qty": 20,
+          "po_number": "1215",
+          "po_date": "05/13/2026"
+        }
+      ]
+    },
+    "KLDR003": {
+      "part_number": "KLDR003",
+      "category": "Protection Devices",
+      "description": "LITTELFUSE 3A UL CLASS CC, TIME DELAY FUSE",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 10.71,
+          "qty": 4,
+          "po_number": "1171",
+          "po_date": "03/19/2026"
+        }
+      ]
+    },
+    "KLDR010": {
+      "part_number": "KLDR010",
+      "category": "Protection Devices",
+      "description": "LITTELFUSE 10A UL CLASS CC, TIME DELAY FUSE",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 10.71,
+          "qty": 4,
+          "po_number": "1171",
+          "po_date": "03/19/2026"
+        }
+      ]
+    },
+    "KLDR07.5": {
+      "part_number": "KLDR07.5",
+      "category": "Protection Devices",
+      "description": "LITTELFUSE 7.5A UL CLASS CC, TIME DELAY FUSE",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 10.71,
+          "qty": 6,
+          "po_number": "1171",
+          "po_date": "03/19/2026"
+        }
+      ]
+    },
+    "JTD500": {
+      "part_number": "JTD500",
+      "category": "Protection Devices",
+      "description": "Fuse, Time-Delay, Class J, 600V, 500V, JTD Series",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 300.99,
+          "qty": 3,
+          "po_number": "1171",
+          "po_date": "03/19/2026"
+        }
+      ]
+    },
+    "M9F42130": {
+      "part_number": "M9F42130",
+      "category": "Protection Devices",
+      "description": "Miniature circuit breaker (MCB), Multi9 C60BP, 1P, 30A, C curve, 14kA (UL489), 10kA (IEC/EN 60947-2)",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 25.1,
+          "qty": 1,
+          "po_number": "1175",
+          "po_date": "03/24/2026"
+        }
+      ]
+    },
+    "M9F42104": {
+      "part_number": "M9F42104",
+      "category": "Protection Devices",
+      "description": "Miniature circuit breaker (MCB), Multi9 C60BP, 1P, 4A, C curve, 14kA (UL489), 10kA (IEC/EN 60947-2)",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 22.71,
+          "qty": 1,
+          "po_number": "1175",
+          "po_date": "03/24/2026"
+        },
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 22.71,
+          "qty": 1,
+          "po_number": "1203",
+          "po_date": "05/01/2026"
+        },
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 22.71,
+          "qty": 1,
+          "po_number": "1217",
+          "po_date": "05/19/2026"
+        }
+      ]
+    },
+    "752-9412": {
+      "part_number": "752-9412",
+      "category": "Controllers",
+      "description": "Edge Computer; 2 x ETHERNET, 4 x USB, HDMI, DP; 16GB RAM; 128GB FLASH",
+      "prices": [
+        {
+          "vendor": "WAGO Corporation",
+          "unit_cost": 1443.64,
+          "qty": 1,
+          "po_number": "1178",
+          "po_date": "03/25/2026"
+        }
+      ]
+    },
+    "1274118": {
+      "part_number": "1274118",
+      "category": "Power Supplies",
+      "description": "UPS- BAT/PB/24DC/7AH - Battery module",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 215.84,
+          "qty": 2,
+          "po_number": "1188",
+          "po_date": "04/15/2026"
+        },
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 215.84,
+          "qty": 2,
+          "po_number": "1203",
+          "po_date": "05/01/2026"
+        }
+      ]
+    },
+    "2320283": {
+      "part_number": "2320283",
+      "category": "Power Supplies",
+      "description": "QUINT4- UPS/1AC/1AC/1KV A - Uninterruptible Power supply",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 1578.98,
+          "qty": 1,
+          "po_number": "1188",
+          "po_date": "04/15/2026"
+        },
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 1578.98,
+          "qty": 1,
+          "po_number": "1203",
+          "po_date": "05/01/2026"
+        }
+      ]
+    },
+    "9070FSC23": {
+      "part_number": "9070FSC23",
+      "category": "Protection Devices",
+      "description": "Terminal cover, T25 to T5000, 2 covers per kit",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 13.52,
+          "qty": 1,
+          "po_number": "1188",
+          "po_date": "04/15/2026"
+        }
+      ]
+    },
+    "M9F42101": {
+      "part_number": "M9F42101",
+      "category": "Protection Devices",
+      "description": "Miniature circuit breaker (MCB), Multi9 C60BP, 1P, 1A, C curve, 14kA (UL489), 10kA (IEC/EN 60947-2)",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 22.71,
+          "qty": 2,
+          "po_number": "1188",
+          "po_date": "04/15/2026"
+        }
+      ]
+    },
+    "M9F42103": {
+      "part_number": "M9F42103",
+      "category": "Protection Devices",
+      "description": "Miniature circuit breaker (MCB), Multi9 C60BP, 1P, 3A, C curve, 14kA (UL489), 10kA (IEC/EN 60947-2)",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 26.27,
+          "qty": 5,
+          "po_number": "1188",
+          "po_date": "04/15/2026"
+        }
+      ]
+    },
+    "M9F42115": {
+      "part_number": "M9F42115",
+      "category": "Protection Devices",
+      "description": "Miniature circuit breaker (MCB), Multi9 C60BP, 1P, 15A, C curve, 14kA (UL489), 10kA (IEC/EN 60947-2)",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 22.71,
+          "qty": 1,
+          "po_number": "1188",
+          "po_date": "04/15/2026"
+        }
+      ]
+    },
+    "RM22TR31": {
+      "part_number": "RM22TR31",
+      "category": "Relays",
+      "description": "3-phase control relay, Harmony Control Relays, 8A, 2CO, 200...240V AC",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 118.54,
+          "qty": 1,
+          "po_number": "1188",
+          "po_date": "04/15/2026"
+        },
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 118.54,
+          "qty": 1,
+          "po_number": "1203",
+          "po_date": "05/01/2026"
+        }
+      ]
+    },
+    "XT5NU330AB": {
+      "part_number": "XT5NU330AB",
+      "category": "Protection Devices",
+      "description": "FF000XXX XT5N 400 TMA 300-3000, 3P FF UL",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 1027.33,
+          "qty": 1,
+          "po_number": "1194",
+          "po_date": "04/16/2026"
+        }
+      ]
+    },
+    "KXT5CUAL2X5": {
+      "part_number": "KXT5CUAL2X5",
+      "category": "Terminal Blocks",
+      "description": "00K-3PC ABB FCCUAL 2X2/0-500KCMIL XT5, 3PUL LUG KIT",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 120.0,
+          "qty": 1,
+          "po_number": "1194",
+          "po_date": "04/16/2026"
+        }
+      ]
+    },
+    "KXT5RHESTF": {
+      "part_number": "KXT5RHESTF",
+      "category": "Protection Devices",
+      "description": "P ABB Extended Handle Operating Mechanism, XT5",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 100.0,
+          "qty": 1,
+          "po_number": "1194",
+          "po_date": "04/16/2026"
+        }
+      ]
+    },
+    "1279135": {
+      "part_number": "1279135",
+      "category": "Controllers",
+      "description": "PLC-V8R/ETH-MP/BM | Communication module, Base module with multi-protocol connection (PROFINET, EtherNet/IPTM, and Modbus/TCP) with 8 I/Os, for plug-in connection to 8 digital or analog PLC-INTERFACE terminal blocks,",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 280.0,
+          "qty": 1,
+          "po_number": "1196",
+          "po_date": "04/17/2026"
+        }
+      ]
+    },
+    "2900299": {
+      "part_number": "2900299",
+      "category": "Relays",
+      "description": "PLC-RPT- 24DC/21,PLC-INTERFACE, consisting of PLC-BPT.../21 basic terminal block with push-in technology and plug-in miniature relay with power contact",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 12.16,
+          "qty": 4,
+          "po_number": "1196",
+          "po_date": "04/17/2026"
+        }
+      ]
+    },
+    "SCE-726018FSD": {
+      "part_number": "SCE-726018FSD",
+      "category": "Enclosure",
+      "description": "",
+      "prices": [
+        {
+          "vendor": "Saginaw Control & Engineering",
+          "unit_cost": null,
+          "qty": null,
+          "po_number": "1197",
+          "po_date": "04/24/2026"
+        }
+      ]
+    },
+    "SCE-72P60F1": {
+      "part_number": "SCE-72P60F1",
+      "category": "Enclosure",
+      "description": "Subpanel, Full: 60.00\"H x 56.00\"W x 0.88\"D",
+      "prices": [
+        {
+          "vendor": "Saginaw Control & Engineering",
+          "unit_cost": 445.31,
+          "qty": 2,
+          "po_number": "1197",
+          "po_date": "04/24/2026"
+        }
+      ]
+    },
+    "18-MTW-STR-BRN-500": {
+      "part_number": "18-MTW-STR-BRN-500",
+      "category": "Wire",
+      "description": "WIRE 18 AWG, MTW STR, BROWN, PER FT (500 FT SPOOL) 2,000 0.0744 148.80",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": null,
+          "qty": null,
+          "po_number": "1199",
+          "po_date": "05/01/2026"
+        }
+      ]
+    },
+    "18-MTW-STR-OR": {
+      "part_number": "18-MTW-STR-OR",
+      "category": "Wire",
+      "description": "",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": null,
+          "qty": 500,
+          "po_number": "1199",
+          "po_date": "05/01/2026"
+        }
+      ]
+    },
+    "LPSC002Z": {
+      "part_number": "LPSC002Z",
+      "category": "Protection Devices",
+      "description": "Fuse Holder, Class CC, 30A, 2 Pole, Non-Indicating",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 38.64,
+          "qty": 4,
+          "po_number": "1199",
+          "po_date": "05/01/2026"
+        }
+      ]
+    },
+    "EX260-SIL1": {
+      "part_number": "EX260-SIL1",
+      "category": "Controllers",
+      "description": "IO LINK COMM MODULE PORT CLASS B",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 201.84,
+          "qty": 1,
+          "po_number": "1200",
+          "po_date": "04/24/2026"
+        }
+      ]
+    },
+    "SY50M-1-1A-N11-NA": {
+      "part_number": "SY50M-1-1A-N11-NA",
+      "category": "Relays",
+      "description": "SS5Y5 D SIDE END PLATE",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 54.63,
+          "qty": 1,
+          "po_number": "1200",
+          "po_date": "04/24/2026"
+        }
+      ]
+    },
+    "SY50M-2-1DA-N7-NA": {
+      "part_number": "SY50M-2-1DA-N7-NA",
+      "category": "Relays",
+      "description": "MANIFOLD BLOCK ASSY, NATURAL COLOR",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 18.63,
+          "qty": 4,
+          "po_number": "1200",
+          "po_date": "04/24/2026"
+        }
+      ]
+    },
+    "SY5100-5U1-NA": {
+      "part_number": "SY5100-5U1-NA",
+      "category": "Relays",
+      "description": "VALVE, 5 PORT SOLENOID",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 55.59,
+          "qty": 4,
+          "po_number": "1200",
+          "po_date": "04/24/2026"
+        }
+      ]
+    },
+    "SY50M-3-1A-00-NA": {
+      "part_number": "SY50M-3-1A-00-NA",
+      "category": "Hardware",
+      "description": "SS5Y5 U SIDE END PLATE",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 15.75,
+          "qty": 1,
+          "po_number": "1200",
+          "po_date": "04/24/2026"
+        }
+      ]
+    },
+    "7T.81.0.000.230": {
+      "part_number": "7T.81.0.000.230",
+      "category": "Heating",
+      "description": "",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": null,
+          "qty": 3,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "7L.43.0.230.1100": {
+      "part_number": "7L.43.0.230.1100",
+      "category": "Buttons & Lights",
+      "description": "FINDER LED PANEL LIGHT, 110-240VAC/DC PUSH-IN",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 62.75,
+          "qty": 4,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "7F.02.0.000.300": {
+      "part_number": "7F.02.0.000.300",
+      "category": "Heating",
+      "description": "",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": null,
+          "qty": 0,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "7F.21.8.120.310": {
+      "part_number": "7F.21.8.120.310",
+      "category": "Heating",
+      "description": "",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": null,
+          "qty": 0,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "KXT5CUAL2X50": {
+      "part_number": "KXT5CUAL2X50",
+      "category": "Terminal Blocks",
+      "description": "0K-3PC ABB FCCUAL 2X2/0-500KCMIL XT5, 3PUL LUG KIT",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 120.0,
+          "qty": 1,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "XT7HU310DFF": {
+      "part_number": "XT7HU310DFF",
+      "category": "Protection Devices",
+      "description": "F000XXX XT7H 1000 E.DIP LSI 1000 3P UL",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 4494.15,
+          "qty": 1,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "KXT7CUAL4X50": {
+      "part_number": "KXT7CUAL4X50",
+      "category": "Terminal Blocks",
+      "description": "0K-3PC KIT FCCUAL4X500KCMIL XT7M F 3PCS",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 297.49,
+          "qty": 2,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "KXT7RHEST": {
+      "part_number": "KXT7RHEST",
+      "category": "Handles",
+      "description": "ABB KXT7RHEST RHE XT7 F/W STAND",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 309.77,
+          "qty": 1,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "XT6HU3800EF": {
+      "part_number": "XT6HU3800EF",
+      "category": "Protection Devices",
+      "description": "F000XXX XT6H 800 E.DIP LSI 800 3P UL",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 3478.87,
+          "qty": 1,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "KXT6CUAL2X75": {
+      "part_number": "KXT6CUAL2X75",
+      "category": "Terminal Blocks",
+      "description": "0KCC-3 FRONT TERMINALS FOR CABLES IN COPPER-ALUMINIUM 2x 500-750 kcmil WITH VOLTAGE SOCKET 3pcs XT6 UL/CSA",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 389.84,
+          "qty": 2,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "KXT6RHESTFP": {
+      "part_number": "KXT6RHESTFP",
+      "category": "Handles",
+      "description": "ROTARY HANDLE OPERATING MECHANISM STANDARD ADJUSTABLE DEPTH L=500 MM WITH PADLOCK DEVICE AND DOOR INTERLOCK FOR C.BREAKER FIXED-PLUG-IN XT6",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 302.83,
+          "qty": 1,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "CL2-513C": {
+      "part_number": "CL2-513C",
+      "category": "Buttons & Lights",
+      "description": "Pilot light, Clear 110-130 VAC",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 16.8,
+          "qty": 9,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "CL2-513R": {
+      "part_number": "CL2-513R",
+      "category": "Buttons & Lights",
+      "description": "Pilot light, Red 110-130 VAC",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 16.8,
+          "qty": 9,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "ST201M-C6": {
+      "part_number": "ST201M-C6",
+      "category": "Protection Devices",
+      "description": "MCB ST200M 1P C 6A, UL1077",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 25.04,
+          "qty": 9,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "ST201M-C15": {
+      "part_number": "ST201M-C15",
+      "category": "Protection Devices",
+      "description": "MCB ST200M 1P C 15A, UL1077",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 25.04,
+          "qty": 2,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "ST201M-C20": {
+      "part_number": "ST201M-C20",
+      "category": "Protection Devices",
+      "description": "MCB ST200M 1P C 20A, UL1077",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 25.04,
+          "qty": 2,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "ST201M-C2": {
+      "part_number": "ST201M-C2",
+      "category": "Protection Devices",
+      "description": "MCB ST200M 1P C 2A, UL1077",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 25.04,
+          "qty": 19,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "ST201M-C1": {
+      "part_number": "ST201M-C1",
+      "category": "Protection Devices",
+      "description": "MCB ST200M 1P C 1A, UL1077",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 25.04,
+          "qty": 2,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "ST201M-C32": {
+      "part_number": "ST201M-C32",
+      "category": "Protection Devices",
+      "description": "MCB ST200M 1P C 32A, UL1077",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 25.04,
+          "qty": 1,
+          "po_number": "1201",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "788-512": {
+      "part_number": "788-512",
+      "category": "Relays",
+      "description": "Relay module; Nominal input voltage: 24 VAC; 2 changeover contacts; Limiting continuous current: 8 A",
+      "prices": [
+        {
+          "vendor": "WAGO Corporation",
+          "unit_cost": 12.17,
+          "qty": 10,
+          "po_number": "1202",
+          "po_date": "05/01/2026"
+        }
+      ]
+    },
+    "788-515": {
+      "part_number": "788-515",
+      "category": "Relays",
+      "description": "Relay module; Nominal input voltage: 115 VAC; 2 changeover contacts; Limiting continuous current: 8 A; Red status indicator;",
+      "prices": [
+        {
+          "vendor": "WAGO Corporation",
+          "unit_cost": null,
+          "qty": null,
+          "po_number": "1202",
+          "po_date": "05/01/2026"
+        }
+      ]
+    },
+    "857-357": {
+      "part_number": "857-357",
+      "category": "Relays",
+      "description": "Relay module; Nominal input voltage: 115 V AC/DC; 1 changeover contact; Limiting continuous current: 6 A; Yellow status indicator;",
+      "prices": [
+        {
+          "vendor": "WAGO Corporation",
+          "unit_cost": null,
+          "qty": null,
+          "po_number": "1202",
+          "po_date": "05/01/2026"
+        }
+      ]
+    },
+    "1415758": {
+      "part_number": "1415758",
+      "category": "Cable Management",
+      "description": "H4X:C5FF:AC, HEAVYPORT B24 panel mounting base, with single locking latch, with plastic protective cover,1x RJ45 CAT5e (female/female)",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 114.82,
+          "qty": 2,
+          "po_number": "1203",
+          "po_date": "05/01/2026"
+        }
+      ]
+    },
+    "XB5AS8444": {
+      "part_number": "XB5AS8444",
+      "category": "Buttons & Lights",
+      "description": "Emergency stop switching off, Harmony XB5, plastic, red mushroom 40mm, 22mm, trigger latching turn to release, 2NC",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 67.81,
+          "qty": 1,
+          "po_number": "1203",
+          "po_date": "05/01/2026"
+        }
+      ]
+    },
+    "PK12GTA": {
+      "part_number": "PK12GTA",
+      "category": "Terminal Blocks",
+      "description": "Load center accessory, QO/Homeline, ground bar kit, 12 terminals",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 9.48,
+          "qty": 6,
+          "po_number": "1203",
+          "po_date": "05/01/2026"
+        }
+      ]
+    },
+    "9070T500": {
+      "part_number": "9070T500",
+      "category": "Transformers",
+      "description": "D19 Transformer, Type T, 500VA, 1 phase, 208/240/277/380/480V primary, 24V secondary, 115C rise",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 428.62,
+          "qty": 2,
+          "po_number": "1203",
+          "po_date": "05/01/2026"
+        }
+      ]
+    },
+    "M9F42120": {
+      "part_number": "M9F42120",
+      "category": "Protection Devices",
+      "description": "Miniature circuit breaker (MCB), Multi9 C60BP, 1P, 20A, C curve, 14kA (UL489), 10kA (IEC/EN 60947-2)",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 22.71,
+          "qty": 1,
+          "po_number": "1203",
+          "po_date": "05/01/2026"
+        }
+      ]
+    },
+    "M9F42102": {
+      "part_number": "M9F42102",
+      "category": "Protection Devices",
+      "description": "Miniature circuit breaker (MCB), Multi9 C60BP, 1P, 2A, C curve, 14kA (UL489), 10kA (IEC/EN 60947-2)",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 22.71,
+          "qty": 7,
+          "po_number": "1203",
+          "po_date": "05/01/2026"
+        },
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 22.71,
+          "qty": 1,
+          "po_number": "1217",
+          "po_date": "05/19/2026"
+        }
+      ]
+    },
+    "JTD150": {
+      "part_number": "JTD150",
+      "category": "Fuses",
+      "description": "Littlefuse 150A UL Class J Time Delay Fuse",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 76.5714,
+          "qty": 3,
+          "po_number": "1206",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "2002": {
+      "part_number": "2002",
+      "category": "Terminal Blocks",
+      "description": "",
+      "prices": [
+        {
+          "vendor": "WAGO Corporation",
+          "unit_cost": null,
+          "qty": 3201,
+          "po_number": "1208",
+          "po_date": "05/04/2026"
+        },
+        {
+          "vendor": "WAGO Corporation",
+          "unit_cost": null,
+          "qty": 3227,
+          "po_number": "1208",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "221-413": {
+      "part_number": "221-413",
+      "category": "Terminal Blocks",
+      "description": "LEVER-NUTS® splicing connector; 3-conductor with operating levers; 24-12 AWG; transparent housing; Box of 50 pieces",
+      "prices": [
+        {
+          "vendor": "WAGO Corporation",
+          "unit_cost": 13.8645,
+          "qty": 1,
+          "po_number": "1208",
+          "po_date": "05/04/2026"
+        }
+      ]
+    },
+    "1SCA022776R": {
+      "part_number": "1SCA022776R",
+      "category": "Protection Devices",
+      "description": "",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": null,
+          "qty": 7200,
+          "po_number": "1209",
+          "po_date": "05/05/2026"
+        }
+      ]
+    },
+    "3201013": {
+      "part_number": "3201013",
+      "category": "Terminal Blocks",
+      "description": "AI-TWIN 2X 6 -14 YE - Ferrule, Yellow (Bag of 100)",
+      "prices": [
+        {
+          "vendor": "Southern Controls, Inc.",
+          "unit_cost": 93.0,
+          "qty": 1,
+          "po_number": "1209",
+          "po_date": "05/05/2026"
+        }
+      ]
+    },
+    "500 MCM-THHN-STR-BLACK": {
+      "part_number": "500 MCM-THHN-STR-BLACK",
+      "category": "Wire",
+      "description": "WIRE, 500 MCM, THHN, STR, BLACK, PRICED PER FT",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 19.9233,
+          "qty": 20,
+          "po_number": "1212",
+          "po_date": "05/08/2026"
+        }
+      ]
+    },
+    "2/0-THHN-STR-BLACK": {
+      "part_number": "2/0-THHN-STR-BLACK",
+      "category": "Wire",
+      "description": "Wire, 2/0 AWG, 19 STR THHN, Black (Priced per ft)",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 5.4017,
+          "qty": 40,
+          "po_number": "1212",
+          "po_date": "05/08/2026"
+        }
+      ]
+    },
+    "LPSC0002Z": {
+      "part_number": "LPSC0002Z",
+      "category": "Protection Devices",
+      "description": "Fuse Holder, Class CC, 30A, 2 Pole, Non-Indicating",
+      "prices": [
+        {
+          "vendor": "Joseph Fanning",
+          "unit_cost": 38.64,
+          "qty": 15,
+          "po_number": "1215",
+          "po_date": "05/13/2026"
+        }
+      ]
+    },
+    "3240547": {
+      "part_number": "3240547",
+      "category": "Wire",
+      "description": "Spade Terminal, Insulated, 16-14AWG, 0.5mm Spade",
+      "prices": [
+        {
+          "vendor": "Advantage Industrial Automation",
+          "unit_cost": 0.32,
+          "qty": 50,
+          "po_number": "1217",
+          "po_date": "05/19/2026"
+        }
+      ]
+    }
+  }
+}
