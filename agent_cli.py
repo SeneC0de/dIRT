@@ -285,7 +285,7 @@ def cmd_delete_subtask(args):
 
 def cmd_list_directors(args):
     """List every Director doc in Firestore. No filtering by your own director_id — this is the
-    cross-Director discovery query, useful for cleanup and for finding stale Director records."""
+    discovery query, useful for cleanup and for finding stale Director records."""
     out([{"id": d.get("id"), "name": d.get("name"),
           "director_name": d.get("director_name"),
           "description": d.get("description")}
@@ -501,20 +501,6 @@ def cmd_list_stuck(args):
     out(db.list_stuck(did, hours=args.hours))
 
 
-def cmd_cross_ref(args):
-    """Drop a note on another Director's board. Stored as a cross_ref event."""
-    did = resolve_director_id(args.director)
-    eid = db.add_cross_ref(did, args.to, args.message, feature_id=args.feature_id,
-                           user=_current_user())
-    out({"event_id": eid, "from": did, "to": args.to})
-
-
-def cmd_list_cross_refs(args):
-    """Show cross-refs targeting this Director (incoming) and sent from this Director (outgoing)."""
-    did = resolve_director_id(args.director)
-    out(db.list_cross_refs(did, limit=args.limit))
-
-
 # ----- ADR commands -----
 def cmd_add_adr(args):
     """Create a new ADR record (top-level adrs collection)."""
@@ -673,11 +659,6 @@ def cmd_list_messages(args):
 
 def cmd_approve_feature(args):
     """Unblock a feature whose ADR has been approved by the User. Sets status->open and emits a feature_approved event.
-
-    Additionally — per agents/director.md Step 4 — if the approved feature is ADR-linked
-    (`adr_url` set), broadcast a `cross_ref` event to every OTHER Director in `directors/`.
-    The broadcast is a best-effort side effect: any failure is logged and skipped so the
-    approve path itself never aborts.
     """
     did = resolve_director_id(args.director)
     doc = db.get_feature(args.feature_id)
@@ -688,46 +669,6 @@ def cmd_approve_feature(args):
     db.update_feature(args.feature_id, status="open")
     db.add_event(did, "feature_approved", user=_current_user(), feature_id=args.feature_id,
                  payload=json.dumps({"title": doc.get("title"), "adr_url": doc.get("adr_url"), "approved_by": _current_user()}))
-
-    # --- ADR cross-ref broadcast (Step 4 doctrine) ---
-    # Re-read so we operate on post-update state, and so adr_url/adr_number reflect the stored doc.
-    feat = db.get_feature(args.feature_id) or doc
-    adr_url = feat.get("adr_url")
-    adr_num = feat.get("adr_number")
-    if adr_url:
-        try:
-            my_id = feat.get("director_id") or did
-            title = feat.get("title", "")
-            user_name = _current_user()
-            directors = db.list_directors() or []
-            recipients = [d for d in directors if d.get("id") != my_id]
-            adr_label = f"ADR {adr_num}" if adr_num else "ADR"
-            msg_template = (
-                f"{adr_label} '{title}' approved by {user_name}. "
-                f"Link: {adr_url}. Cross-ref from {my_id}."
-            )
-            sent = []
-            for other in recipients:
-                other_id = other.get("id")
-                if not other_id:
-                    continue
-                try:
-                    db.add_cross_ref(
-                        from_director_id=my_id,
-                        to_director_id=other_id,
-                        message=msg_template,
-                        feature_id=args.feature_id,
-                        user=user_name,
-                    )
-                    sent.append(other_id)
-                except Exception as broadcast_err:
-                    sys.stderr.write(
-                        f"warning: cross_ref broadcast to '{other_id}' failed: {broadcast_err}\n"
-                    )
-            # Print to stderr so we don't pollute the stdout JSON envelope the dashboard parses.
-            print(f"Broadcast {adr_label} approval to {len(sent)} directors: {sent}", file=sys.stderr)
-        except Exception as outer_err:
-            sys.stderr.write(f"warning: ADR cross_ref broadcast skipped: {outer_err}\n")
 
     out({"ok": True, "feature_id": args.feature_id})
 
@@ -742,7 +683,7 @@ def main():
     sub.add_parser("kickoff", help="Print the canonical Director startup message (with resolved doctrine paths). Run as the first command in a fresh Claude Code session.").set_defaults(func=cmd_kickoff)
     sub.add_parser("doctrine", help="Print absolute paths to the canonical director.md + the three head templates (head_drafter.md, head_coder.md, head_triage.md) as JSON.").set_defaults(func=cmd_doctrine)
     sub.add_parser("init-director", help="Bootstrap this Director's Firestore record from project.json").set_defaults(func=cmd_init_director)
-    sub.add_parser("list-directors", help="List every Director in Firestore (cross-Director discovery).").set_defaults(func=cmd_list_directors)
+    sub.add_parser("list-directors", help="List every Director in Firestore.").set_defaults(func=cmd_list_directors)
 
     sp = sub.add_parser("delete-director", help="Permanently delete a Director and (with --cascade) its stories/tasks/agents.")
     sp.add_argument("--director-id", dest="director_id", required=True)
@@ -765,12 +706,6 @@ def main():
     sp = sub.add_parser("list-stuck", help="Sub-tasks in_progress for too long; suggests Head death.")
     sp.add_argument("--hours", type=float, default=8.0, help="threshold (default 8h)")
     sp.set_defaults(func=cmd_list_stuck)
-
-    sp = sub.add_parser("cross-ref", help="Drop a note on another Director's board.")
-    sp.add_argument("--to", required=True, help="target director_id (e.g. dweb)")
-    sp.add_argument("--message", required=True)
-    sp.add_argument("--feature-id", default=None, help="local feature this cross-ref relates to (optional)")
-    sp.set_defaults(func=cmd_cross_ref)
 
     # ----- ADR subcommands -----
     sp = sub.add_parser("add-adr", help="Create an ADR record in the top-level adrs collection.")
@@ -827,9 +762,6 @@ def main():
     sp.add_argument("--adr-number", required=True, dest="adr_number")
     sp.set_defaults(func=cmd_mark_adr_accepted)
 
-    sp = sub.add_parser("list-cross-refs", help="Incoming + outgoing cross-refs for this Director.")
-    sp.add_argument("--limit", type=int, default=50)
-    sp.set_defaults(func=cmd_list_cross_refs)
 
     sp = sub.add_parser("list-messages",
         help="Messages addressed to this Director (user_director DMs + director-to-director chats).")
