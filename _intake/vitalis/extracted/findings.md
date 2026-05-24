@@ -197,9 +197,51 @@ All 4 prior analyses honored the bedrock rules (purple/red bar, Wago low-confide
 
 ## 10. Gaps where more source docs would unblock further synthesis
 
-1. A second Copeland-controller job.
+1. A second Copeland-controller job. **(Partly closed in v0.2 — E1388 is Copeland via Visiograph 818-9002; E1355 by filename.)**
 2. The cluster-level `MMP_Contactor_Type_1_Coordination` spreadsheet that E1404's supplemental references.
 3. A populated IO sheet for any job (would convert sel-rules axes 4 and 9 from descriptive to derivable).
 4. An actual As-Built BOM for any job.
 5. Per-PO job tagging for `po-summary.json` (to compute per-job material totals and close § 2.1).
 6. RFQ Panel Options toggle values in machine-readable form per job.
+
+## 11. v0.2 validation pass — new findings (2026-05-24, Jones)
+
+Surfaced by the light validation pass against the 10 unanalyzed jobs (E1354, E1355, E1360, E1371, E1377, E1378, E1380, E1388, E1405, E1406). See `validation-v0.2.md` for the full report.
+
+### 11.1 v0.1 voltage enum was incomplete — 575 VAC missing (P0)
+- E1354 Bright Renewables UL: 575 VAC 3φ+N+PE, 60 HP, FLA 326, MOCP 400, SCCR 35 kAIC
+- E1380 Bright Renewables Coolshift: 575 VAC 3φ+PE, 75 HP, FLA 303, MOCP 400, SCCR 35 kAIC
+- Both Canadian Roxsta G6 panels. v0.1 voltage axis only had [208, 460]. **Without 575 V, the system cannot model two existing customer panels.**
+- **Status:** selection-rules.yaml axis 5 enum expanded to include 575 V; cascade rules (phase monitor, branch breakers, SPD, control xfmr taps) marked TBD pending BOM evidence.
+
+### 11.2 E1380 BOM has no red bar (P1)
+- Purple at row 12, red bar not present. `bom_extract.py` returned 0 in-bar rows.
+- Either the BOM is WIP / unfinished, or the red-bar convention wasn't applied for this job.
+- **Action:** Randall, please mark the red bar on E1380 BOM so the bedrock convention can apply, or document E1380 as a known WIP exception.
+
+### 11.3 Enclosure brand "Saginaw vs Rittal" is actually "Saginaw 8:1 Rittal" (resolves § 8.3)
+- Saginaw SCE-724818FSD 72×48×18 confirmed in 8 of 9 BOM-validated jobs (E1377, E1378, E1388, E1395, E1399, E1404, E1405, E1406).
+- Rittal observed only in E1392 (Canadian customer site).
+- **Status:** v0.1 candidate_invariant promoted to anchored. Treat Saginaw FSD as the default and Rittal as a customer/site-driven outlier, not as a co-equal option.
+
+### 11.4 VFD vendor independent of refrigeration controller (P2 observation)
+- E1355 Superking 11 has Copeland refrigeration controller + Danfoss FC-103 VFDs. Don't conflate VFD vendor with controller family in selection rules.
+
+### 11.5 SCCR is a separate axis, not implied by voltage (P2 observation)
+- Observed: 35 kAIC on 575 V Canadian jobs (E1354, E1380); 65 kAIC on 208 V and 460 V US jobs.
+- Possibly Canadian-grid driven, possibly customer-driven. Either way, SCCR-driven main breaker frame selection (XT5N vs XT5H vs XT6H) is not currently a named axis.
+- **Status:** new axis `sccr_target` recommended for selection-rules.yaml; deferred until a third data point clarifies the driver.
+
+### 11.6 AK-SM 850A is the Danfoss HMI/PLC; MMIGRS2 confusion resolved
+- Confirmed in E1395, E1399, E1404, E1405, E1406 (5 of 5 Danfoss jobs). Always paired with AK-PC 782B as `(controller_board, hmi_system_manager)`.
+- v0.1 § "candidate MMIGRS2 HMI" was wrong — MMIGRS2 in E1395 is a Copeland-edge or supplementary HMI, not the standard.
+
+### 11.7 NG cluster (E1404, E1405, E1406) is bit-identical in motor protection
+- All three: MS165-65 ×4 + MS132-16 ×2 + AF65 ×4 + AF16 ×2 + BEA65 ×4 + BEA16 ×2.
+- Cluster supplemental's `MMP_Contactor_Type_1_Coordination` spec applies authoritatively to all three jobs.
+- UL508A 120% rule (from finding 3.10 resolution) applies identically across the cluster.
+
+### 11.8 Pilot family is voltage-correlated panel-shop preference, not a hard rule (revises § 8.2)
+- Schneider XB5/XB4 observed in: E1392 (208 V), E1395 (208 V), **E1377 (460 V!)**, E1378 (460 V), E1388 (208 V).
+- ABB CL2-513C / M2SS2-10B observed in: E1399 (460 V), E1404 (460 V), E1405 (460 V), E1406 (460 V) — the NG cluster.
+- **Revision:** pilot family correlates with voltage AND cluster (the NG cluster uses ABB; non-NG jobs use Schneider regardless of voltage). Not a hard voltage rule.

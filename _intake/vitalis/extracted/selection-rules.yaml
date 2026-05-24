@@ -191,7 +191,10 @@ selection_rules:
   # =========================================================================
   - dimension: incoming_voltage
     inputs:
-      - {name: voltage, type: enum, values: ["208 VAC 3ph+E 60 Hz", "460 VAC 3ph+E 60 Hz"]}
+      - {name: voltage, type: enum, values: ["208 VAC 3ph+E 60 Hz", "460 VAC 3ph+E 60 Hz", "575 VAC 3ph+(N+)PE 60 Hz"]}
+      # 575 VAC tier added in v0.2 validation pass (E1354 Bright Renewables UL,
+      # E1380 Bright Renewables Coolshift — both Canadian Roxsta G6 panels).
+      # Cascade rules below not yet derived; flagged in validation-v0.2.md.
     outputs:
       "208 VAC 3ph+E 60 Hz":
         phase_monitor: {part: "RM22TR31", desc: "Schneider Harmony 3-phase 200-240 V"}
@@ -205,6 +208,16 @@ selection_rules:
         phase_monitor: {part: "RM22TR33", desc: "Schneider Harmony 3-phase 380-480 V"}
         branch_breaker_family: "abb_st201m"
         control_xfmr_primary_tap: "480 V"
+      "575 VAC 3ph+(N+)PE 60 Hz":
+        phase_monitor: "TBD — needs BOM data from a 575 V panel"
+        branch_breaker_family: "TBD"
+        control_xfmr_primary_tap: "TBD (575 V tap on CPTW3K0-GSC if available)"
+        spd_family: "TBD"
+        # Observed in: E1354 (Bright Renewables UL, 60HP / 326A / 35 kAIC),
+        #              E1380 (Bright Renewables Coolshift, 75HP / 303A / 35 kAIC).
+        # Sample size: 2 jobs (Canadian); no BOM with bars parsed for either.
+        # Both jobs flag SCCR 35 kAIC (vs 65 kAIC on 208 V and 460 V jobs).
+        # Confidence: L. Cascade rules not derivable from drawings alone.
         pilot_voltage: "110-130 VAC LED (ABB CL2)"
         evidence:
           - {job: E1399, source: "E1399/feature-parts-association.md", note: "RM22TR33 + ST201M mix + CL2-513C/R"}
@@ -240,8 +253,10 @@ selection_rules:
   - dimension: enclosure_size
     inputs:
       - {name: compressor_count, type: int}
-      - {name: incoming_voltage, type: enum, values: ["208 V", "460 V"]}
+      - {name: incoming_voltage, type: enum, values: ["208 V", "460 V", "575 V"]}
       - {name: customer_brand_preference, type: enum, values: [rittal, saginaw], default: saginaw}
+      # v0.2: Saginaw SCE-724818FSD is the default / near-invariant
+      # (8 of 9 BOM-validated jobs). Rittal observed only in E1392 (Canadian site).
     outputs:
       observed_mapping:
         - {compressors: 5, voltage: "208 V", enclosure: "Rittal 1400x800x500-or-700 mm S/D", side_panels: "2x 1400x500h", subpanel: "2x 500x400 + 2x 700x400 partial mounting plates", job: E1392}

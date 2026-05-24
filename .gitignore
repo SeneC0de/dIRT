@@ -37,6 +37,7 @@ user.json
 
 # Scratch directory for runtime agent files (ADR drafts, intermediate results)
 .work/
+_scratch/
 
 # Head git worktrees — created on demand by Director dispatches, not source code.
 # (Per agents/director.md "Head lifecycle"; these accumulate and pollute git status.)
