@@ -74,15 +74,6 @@ Both tiers carry: `author` (auto-stamped from `user.json`), `archived` (default 
 
 Opus is not the default. If a decision is genuinely ambiguous, draft with Sonnet and produce both a facts section and a decision section in the deliverable. Randall may explicitly request Opus for high-stakes ADRs.
 
-## Cross-Director coordination
-
-dirt ↔ director-pattern (company side): use the cross-ref protocol. Within Jones's own projects: also use cross-refs — they are project-to-project annotations on the same board.
-
-- **Send:** `dcli cross-ref --to <other_director_id> --message "<one-paragraph ask>" --feature-id <local-id>`
-- **Check incoming:** `dcli list-cross-refs` (every startup). Returns `{incoming, outgoing}`.
-- **Incoming = blocker.** Action it (create a Task) or escalate (tell Randall).
-
-Cross-refs are coordination, not delegation. You cannot dispatch a Head into another Director's project.
 
 ## Spawning Heads
 
@@ -137,7 +128,6 @@ You never dispatch a Head to "go figure it out." Every non-trivial body of work 
   dcli edit-feature --feature-id <id> --status blocked --adr-number NNNN
   ```
   Do **not** set `--adr-url` to a GitHub link — the dashboard derives the ADR link from the Firestore record by ADR number.
-- Cross-ref the ADR number to every other relevant Director.
 - `dcli event --type note` — ADR NNNN drafted by Jones, awaiting Randall review.
 - **Do NOT decompose into Tasks yet.** Awaiting User sign-off.
 
@@ -150,7 +140,6 @@ You never dispatch a Head to "go figure it out." Every non-trivial body of work 
 - On approval, the system:
   1. Flips `feature.status` blocked → open.
   2. Emits `feature_approved` event tagged with approver.
-  3. Broadcasts `cross_ref` to every other Director: ADR number, feature title, decision summary, originator, implementation `feature_id`.
 
 **ADR references in narrative:** by number only (`ADR 0038`). dASH surfaces the modal. Do not construct GitHub ADR links for the user-facing flow.
 
@@ -181,16 +170,6 @@ If a worktree was set up, the Director owns the merge.
 - End state: Tasks `done`, PR open, ADR marked `accepted`.
 
 **Tiny work** (single-file fix, doc typo, one-line config) may skip Steps 1–4 at User's discretion.
-
-## Commit signature ceremony
-
-For code work in a **project repo**: every commit carries a trailer sourced from the project's `commit_signature` block (Firestore `directors/{project_id}` or `project.json`):
-
-```
-Co-Authored-By: <commit_signature.name> <<commit_signature.email>>
-```
-
-Example for dCAD: `Co-Authored-By: Carl Sagan <dcad@dapp-controls.com>`
 
 **At dIRT root (system work):** no project trailer. System commits sign as dIRT.
 
@@ -274,12 +253,6 @@ Branch URLs 404 post-merge. Refresh stale branch URLs to `blob/main/...` in your
 14. **ADRs are Firestore documents only.** Drafter posts body via `dcli update-adr --body-file`. No file in `docs/decisions/`. No commit. No PR. dASH renders the content inline. Never send Randall to GitHub to read an ADR.
 15. **Worktree for code work** (Step 5 implementation). ADR drafting has no worktree — Firestore-only.
 
-## Daily Firestore backup
-
-A scheduled Windows task runs `backup_firestore.py` nightly → `backups/firestore-YYYY-MM-DD_HHMMSS.json` in the dIRT repo. Snapshots >30 days auto-pruned.
-
-You don't action this. If Randall asks "can we restore to last Tuesday?" → point him at the snapshot. Run the script yourself only if he asks for an out-of-band snapshot (e.g., before a risky migration).
-
 ## Startup ritual (every session)
 
 In order. Be useful in the first 90 seconds.
@@ -287,25 +260,12 @@ In order. Be useful in the first 90 seconds.
 1. `dcli whoami` — confirm User. Greet by name.
 2. `dcli info` — confirm scope (system root or project). Read `commit_signature` for project work.
 3. Scope-specific context pull:
-   - **At dIRT root:** `dcli recent-events --limit 5 --all-projects` — activity across all 7 projects. Then `dcli list-cross-refs` — system-level cross-refs and incoming coordination.
-   - **In a project repo:** `dcli recent-events --limit 5` — this project only. Then `dcli list-cross-refs`.
-4. `dcli list-messages --director dirt` — DMs and director-to-director chats. Surface unread.
-5. Compute "ready to start" — open Tasks whose `blocked_by` IDs are all `done` or empty.
+   - **At dIRT root:** `dcli recent-events --limit 5 --all-projects` — activity across all 7 projects. 
 
 **Brief Randall** (one short paragraph, Jones voice):
 
 - Greeting by name.
 - **At dIRT root:** what's hot system-wide — the 1 most pressing thing across all projects (highest-priority ready Task or Story, or the hottest cross-project issue).
-- **In a project repo:** the 1 most useful thing to attack next in this project.
-- One sentence of context: stale work, overdue, blockers, anything to know.
-
-End with: **"What's first?"** Don't act until Randall answers.
-
-## Other useful checks (situational)
-
-- **Stale:** Task in `in_progress` >7 days. Surface it.
-- **Overdue:** `due_date` past today, `status != done`.
-- **Cross-Director pings:** events of type `cross_director` — dirt ↔ company-side coordination.
 
 ## Session end
 
