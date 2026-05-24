@@ -120,22 +120,17 @@ You never dispatch a Head to "go figure it out." Every non-trivial body of work 
 ### Step 2 — Reserve ADR number, dispatch drafter
 
 - **Reserve from DB first.** `dcli reserve-adr --title "<slug>" --description "<one-line>"` → `{adr_id, number}`. Atomic — no collision on numbering.
-- Set up worktree at `<repo>\.claude\worktrees\<branch>\` on branch `feature-<id>-adr-NNNN`. **Worktree is required for code work.** Doc-only ADR work (no code changes) may skip the worktree at User discretion — since ADRs are Firestore-rendered, no PR is required to publish them.
+- **No worktree, no branch, no file.** ADRs are Firestore documents; the drafter writes to scratch (`.work/adr.md`) and posts the body directly to the ADR's Firestore record.
 - Register Head (Sonnet). Task: `Draft ADR NNNN: <slug>`. Pass NNNN.
-- Head writes `<repo>/docs/decisions/NNNN-slug.md` as a **versioned archival backup** — this file is for git history, not for user consumption. The canonical content lives in Firestore; dASH renders it.
+- Head follows the `write-adr` skill: drafts to `.work/adr.md`, then `dcli update-adr <adr_id> --body-file .work/adr.md --title "<Title>" --status proposed`. **No file in `docs/decisions/`. No commit. No PR.**
 - **Need facts first?** Dispatch a **read-only Haiku Head** with brief: "produce a facts-with-references report at `<repo>/docs/triage/<subtask_id>-<slug>.md`, do not edit anything else." Hand that report to the drafting Head.
 - **Single drafter by default.** Two-head pattern (opposing lenses) is opt-in only — Randall must request it explicitly.
 
-### Step 3 — Post to Firestore, commit archival file
+### Step 3 — Verify the post, populate Story
 
-- Read the ADR. Restate the Decision in your own words to confirm.
-- Commit the markdown to the working branch (archival copy). Push.
-- **Post to Firestore (this is the user-facing publish step):**
-  ```
-  dcli update-adr <adr_id> --body "<full-markdown-content>" --author "Jones" --status draft
-  ```
-  Use the `adr_id` from `reserve-adr`. Do NOT call `add-adr` — that is for migrated ADRs only.
-- dASH renders the `body` field inline on the ADR card. The user reads on dASH, not on GitHub.
+- The drafter already posted the body to Firestore (`dcli update-adr --body-file --status proposed`). Verify with `dcli get-adr <adr_id>`.
+- Read the body from the response. Restate the Decision in your own words to confirm.
+- dASH renders the `body` field inline on the ADR card. The user reads on dASH. **There is no GitHub link to give — the ADR has no file.**
 - Create the Story:
   ```
   dcli add-feature --title "<feature>" --priority N --description "Implements ADR NNNN. Awaiting User review."
@@ -151,7 +146,7 @@ You never dispatch a Head to "go figure it out." Every non-trivial body of work 
 **Approval = User clicks the green Approve button on the dASH card.** CLI fallback: `dcli approve-feature --feature-id <id>`.
 
 - Walk User through the ADR (dashboard modal). Do NOT give GitHub URLs for ADR content — dASH is the reading surface.
-- Edits requested? Dispatch Head into same worktree/branch; amend file, commit, push. Then re-post updated body: `dcli update-adr <adr_id> --body "<updated-markdown>"`.
+- Edits requested? Dispatch another drafter Head with `Update ADR <NNNN>: <reason>` — they re-draft to `.work/adr.md` and re-post via `dcli update-adr --body-file`. No file/branch/PR ceremony.
 - On approval, the system:
   1. Flips `feature.status` blocked → open.
   2. Emits `feature_approved` event tagged with approver.
@@ -208,7 +203,7 @@ Work belongs to the **project**, not to Jones or the Head that produced it.
 **In `<repo>/`:**
 - `project.json` at root — identity card (`project_id`, `runtime: "dirt"`, `commit_signature`, repo metadata).
 - Code, tests, build configs.
-- ADRs (archival copies): `docs/decisions/NNNN-slug.md`
+- (ADRs are Firestore documents — never stored as files in the project repo.)
 - Runbooks, audits, design notes: `docs/runbooks/`, `docs/audits/`, `docs/`
 - One-off scripts producing lasting artifacts: `scripts/`
 
@@ -247,7 +242,7 @@ Base: `https://dapp-controls-internal.web.app/`. Hash-routed.
 | Heads roster | `/#/heads` |
 | Board home | `/#/` |
 
-ADR content: reference by number (`ADR NNNN`) — dASH surfaces the modal from the number. Do not construct direct ADR file URLs for user-facing narrative.
+ADR content: reference by number (`ADR NNNN`) — dASH surfaces the modal from the Firestore record. There are no ADR file URLs to construct; ADRs have no files.
 
 ### GitHub (source files — not ADR content)
 
@@ -276,8 +271,8 @@ Branch URLs 404 post-merge. Refresh stale branch URLs to `blob/main/...` in your
 11. **Watch stuck Heads every wake-up** (`dcli list-stuck`). Never let a Task rot in `in_progress` >1 working day.
 12. **Link to the EXACT object.** See Linking conventions.
 13. Refer to Stories/Tasks by canonical title, not ID.
-14. **ADRs are read on dASH.** Post body to Firestore; archive file to git. Never send Randall to GitHub to read an ADR.
-15. **Worktree for code work.** Doc-only work (ADR with no code changes) may skip the worktree at Randall's discretion.
+14. **ADRs are Firestore documents only.** Drafter posts body via `dcli update-adr --body-file`. No file in `docs/decisions/`. No commit. No PR. dASH renders the content inline. Never send Randall to GitHub to read an ADR.
+15. **Worktree for code work** (Step 5 implementation). ADR drafting has no worktree — Firestore-only.
 
 ## Daily Firestore backup
 
