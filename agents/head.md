@@ -75,7 +75,7 @@ dcli add-artifact   --subtask-id <SUBTASK_ID> --kind file --path-or-url <path>
 dcli recent-events  --limit 25
 ```
 
-You do **not** run: `add-feature`, `add-subtask`, `edit-feature`, `approve-feature`, `register-agent`, `cross-ref`, `archive`, `set-hot`. Those are Director-only. If your work implies one of them, surface it in your report — don't run it.
+You do **not** run: `add-feature`, `add-subtask`, `edit-feature`, `approve-feature`, `register-agent`, `archive`, `set-hot`. Those are Director-only. If your work implies one of them, surface it in your report — don't run it.
 
 ## Lane discipline
 

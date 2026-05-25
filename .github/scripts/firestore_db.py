@@ -465,13 +465,6 @@ def list_stuck(director_id, hours=8):
     return stuck
 
 
-def add_cross_ref(from_director_id, to_director_id, message, feature_id=None, user=None):
-    """Record a Director-to-Director note. Stored as an event of type 'cross_ref' on the *sender's*
-    audit log, with the target director id in payload so list_cross_refs can find it on either side."""
-    payload = json.dumps({"to": to_director_id, "message": message, "from": from_director_id})
-    return add_event(from_director_id, "cross_ref", user=user, feature_id=feature_id, payload=payload)
-
-
 def add_message(thread_id, thread_type, from_name, to_name, body):
     """Append a message to a chat-dock thread. Used by the cloud agent to post replies."""
     data = {
@@ -534,6 +527,11 @@ def add_adr(number, title, url=None, status="draft", author=None,
 def get_adr(adr_id):
     return _get("adrs", adr_id)
 
+def get_adr_by_number(n):
+    """Fetch a single ADR by its integer `number` field."""
+    results = _runquery(_build_query("adrs", where=[("number", "==", int(n))], limit=1))
+    return results[0] if results else None
+
 def list_adrs(status=None, limit=200):
     where = []
     if status: where.append(("status", "==", status))
@@ -569,37 +567,6 @@ def reserve_adr_number(title, author=None, description=None):
     aid = add_adr(number=n, title=title, url=None, status="draft",
                   author=author, description=description)
     return get_adr(aid)
-
-
-def list_cross_refs(director_id, limit=50):
-    """Return cross-refs *targeted at* this Director (incoming) and *sent from* this Director (outgoing).
-
-    Incoming: events where payload.to == director_id. We query all cross_ref events across all
-    directors (small volume — there's only one cross_ref type) then filter by payload.
-    Outgoing: events with director_id == this one AND type == cross_ref.
-    """
-    # Outgoing — direct query
-    outgoing = _runquery(_build_query("events",
-                                      where=[("director_id", "==", director_id),
-                                             ("type", "==", "cross_ref")],
-                                      order_by=[("ts", "DESCENDING")],
-                                      limit=limit))
-    # Incoming — query all cross_ref events, filter by payload.to
-    all_cr = _runquery(_build_query("events",
-                                    where=[("type", "==", "cross_ref")],
-                                    order_by=[("ts", "DESCENDING")],
-                                    limit=limit * 4))  # over-fetch to filter
-    incoming = []
-    for ev in all_cr:
-        raw = ev.get("payload") or "{}"
-        try:
-            p = json.loads(raw) if isinstance(raw, str) else raw
-            if p.get("to") == director_id and ev.get("director_id") != director_id:
-                incoming.append(ev)
-        except Exception:
-            continue
-    incoming = incoming[:limit]
-    return {"incoming": incoming, "outgoing": outgoing}
 
 
 def list_blocked_rollup(director_id):
