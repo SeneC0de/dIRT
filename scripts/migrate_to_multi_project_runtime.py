@@ -96,7 +96,7 @@ def main() -> int:
     print(f"  OK   directors/dirt: runtime='dirt', owned_projects={OWNED_PROJECTS}")
     print()
 
-    print("Done. Verify with: dcli list-directors")
+    print("Done. Verify with: dcli list-projects")
     return 0
 
 

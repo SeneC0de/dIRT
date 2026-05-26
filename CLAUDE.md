@@ -9,8 +9,6 @@ The Director persona for this repo is **Jones** (`director_id: dirt`), Steve Job
 dIRT contains:
 
 - The agent CLI (`agent_cli.py`) and Firestore client (`firestore_db.py`) — same machinery as the company repo, but operating under the `dirt` Director identity.
-- The Director Agent GitHub workflow (`.github/workflows/director-agent.yml`).
-- Director scripts that run inside the workflow: `fetch_context.py`, `prepare_drafter_brief.py`, `post_drafter_steps.py`, `post_reply.py`.
 - Doctrine in `agents/director.md` and `agents/head.md`.
 
 What dIRT does **not** contain anymore (moved out to their own homes):
@@ -29,22 +27,10 @@ dIRT/
 ├── KICKOFF.md                          How to start a Director session
 ├── GCP_SETUP.md                        Service-account + Firebase setup
 ├── project.json                        Director identity: Jones / dirt
-├── agent_cli.py                        Canonical agent CLI (shim — real impl in .github/scripts/)
-├── firestore_db.py                     Firestore REST client
+├── agent_cli.py                        Canonical agent CLI
+├── firestore_db.py                     Canonical Firestore REST client
 ├── dcli / dcli.cmd                     Shell shim for agent_cli.py
 ├── backup_firestore.py                 Nightly snapshot script
-│
-├── .github/
-│   ├── workflows/
-│   │   └── director-agent.yml          Director Agent workflow
-│   └── scripts/
-│       ├── agent_cli.py                Canonical CLI (deployed copy)
-│       ├── firestore_db.py             Firestore client
-│       ├── fetch_context.py            Loads .agent_context.json before each run
-│       ├── prepare_drafter_brief.py    Reserves ADR number + writes drafter_brief.md
-│       ├── post_drafter_steps.py       Records ADR + Story on board after drafter run
-│       ├── post_reply.py               Posts reply back to Firestore thread
-│       └── deploy_workflow.sh          Pushes workflow + scripts to project repos
 │
 ├── .claude/
 │   └── skills/
@@ -67,7 +53,6 @@ dIRT/
 
 - **Python 3.12+**. Standard library + `google-auth` + `requests`.
 - No build step. CLI runs directly: `python agent_cli.py …` or `dcli …` from anywhere inside a project repo containing a `project.json`.
-- Workflow deploy to project repos: `bash .github/scripts/deploy_workflow.sh`.
 
 ## Critical rules
 
@@ -79,9 +64,9 @@ Jones (this Director) has authority over cross-cutting work in Randall's persona
 
 The company general Director lives at `C:\Users\randa\source\repos\director-pattern`. Do not touch that repo from a dIRT session unless Randall explicitly asks. Same Firestore database, different Director records.
 
-### 3. `.github/scripts/` is the canonical home
+### 3. Repo root is the canonical home
 
-When you change `agent_cli.py`, `firestore_db.py`, or any script that the workflow runs, edit it under `.github/scripts/`. The repo-root copies (`agent_cli.py`, `firestore_db.py`) are mirrors kept in sync by `deploy_workflow.sh`. Editing the root copies without mirroring causes drift.
+`agent_cli.py` and `firestore_db.py` at the repo root are the single source of truth. There are no mirror copies. Edit them directly.
 
 ### 4. Secrets and credentials
 
@@ -103,4 +88,4 @@ Setup work (renaming, splitting repos, identity changes) does **not** require an
 
 - Prefer `Read`, `Glob`, `Grep` over `Bash(cat|ls|find|grep)` — they're cheaper and structured.
 - Make independent tool calls in **parallel** within a single message. Reading three files serially is three turns; reading them in one batch is one.
-- For board operations, always use `python .github/scripts/agent_cli.py` (or `dcli`), never write to Firestore directly.
+- For board operations, always use `python agent_cli.py` (or `dcli`), never write to Firestore directly.

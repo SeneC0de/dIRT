@@ -534,20 +534,62 @@ panel_template:
         - rotary_handle_part_no
       sizing_rule: "Pick smallest XT-family frame whose trip range covers MOCP"
 
-    compressor_count:
-      observed_options: [5, 6, 7, 9]
+    mt_compressor_count:
+      observed_options: [3, 4, 5]
       breakdown:
-        - {job: E1392, mt: 3, lt: 2, vfd_count: 2, total: 5}
-        - {job: E1395, mt: 4, lt: 3, vfd_count: 2, total: 7}
-        - {job: E1399, mt: 5, lt: 4, vfd_count: 4, total: 9}
-        - {job: E1404, mt: 4, lt: 2, vfd_count: 2, total: 6}
+        - {job: E1392, mt: 3}
+        - {job: E1395, mt: 4}
+        - {job: E1399, mt: 5}
+        - {job: E1404, mt: 4}
       drives:
-        - motor_protection_relay_count
-        - contactor_count
-        - per_compressor_door_devices_count
-        - legend_plate_count
+        - mt_motor_protection_relay_count
+        - mt_contactor_count
+        - mt_branch_count
         - io_channel_count
         - enclosure_size
+
+    lt_compressor_count:
+      observed_options: [2, 3, 4]
+      breakdown:
+        - {job: E1392, lt: 2}
+        - {job: E1395, lt: 3}
+        - {job: E1399, lt: 4}
+        - {job: E1404, lt: 2}
+      drives:
+        - lt_motor_protection_relay_count
+        - lt_contactor_count
+        - lt_branch_count
+        - per_compressor_door_devices_count
+        - legend_plate_count
+
+    vfd_assignment_mt:
+      # Number of MT compressors assigned to VFDs.
+      # VFD hardware is NEVER in the BOM -- customer-furnished or out-of-cabinet in all jobs.
+      # These slots drive aux block qty reductions (TSB, CA4-10, BCXML11), not VFD part rows.
+      # Pattern: always MT1 (C1) on VFD; E1399 adds MT2 (C2).
+      observed_options: [1, 2]
+      breakdown:
+        - {job: E1392, vfd_assignment_mt: 1, tag: "MT1", evidence: "RFQ marks MT1 VFD; aux block reduction confirms"}
+        - {job: E1395, vfd_assignment_mt: 1, tag: "MT1", evidence: "feature-parts-association explicit: MT1 VFD; BCXML11 qty 3 not 4"}
+        - {job: E1399, vfd_assignment_mt: 2, tags: ["MT1","MT2"], evidence: "Load Calc: C1 63.6A VFD, C2 74.2A VFD"}
+        - {job: E1404, vfd_assignment_mt: 1, tag: "MT1", evidence: "RFQ Project Info VFD=True; CA4-10 qty reduction confirms"}
+      drives:
+        - mt_aux_block_count_reduction
+        - mt_vfd_bypass_contactor
+
+    vfd_assignment_lt:
+      # Number of LT compressors assigned to VFDs.
+      # VFD hardware is NEVER in the BOM -- customer-furnished or out-of-cabinet in all jobs.
+      # Pattern: always LT1 (C1) on VFD; E1399 adds LT2 (C2).
+      observed_options: [1, 2]
+      breakdown:
+        - {job: E1392, vfd_assignment_lt: 1, tag: "LT1", evidence: "aux block qty reduction; RFQ confirms"}
+        - {job: E1395, vfd_assignment_lt: 1, tag: "LT1", evidence: "feature-parts-association: LT1 VFD; TSB qty 2 not 3"}
+        - {job: E1399, vfd_assignment_lt: 2, tags: ["LT1","LT2"], evidence: "Load Calc: C1 35A VFD, C2 49.4A VFD"}
+        - {job: E1404, vfd_assignment_lt: 1, tag: "LT1", evidence: "RFQ Project Info VFD=True; CA4-10 qty reduction confirms"}
+      drives:
+        - lt_aux_block_count_reduction
+        - lt_vfd_bypass_contactor
 
     enclosure_size:
       observed_options:

@@ -151,7 +151,7 @@ You never dispatch a Head to "go figure it out." Every non-trivial body of work 
 
 Work belongs to the **project**, not to Jones or the Head that produced it.
 
-- Shared runtime ONLY: `agent_cli.py`, `dcli`/`dcli.cmd`, `firestore_db.py`, `agents/director.md`, `agents/head.md`, `.github/workflows/director-agent.yml`, `.github/scripts/*`.
+- Shared runtime ONLY: `agent_cli.py`, `dcli`/`dcli.cmd`, `firestore_db.py`, `agents/director.md`, `agents/head.md`.
 - One copy, used by every project repo.
 - No per-project files. No project deliverables.
 

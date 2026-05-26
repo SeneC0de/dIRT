@@ -118,7 +118,8 @@ def cmd_add_feature(args):
     author = _current_user()
     fid = db.add_feature(did, args.title, args.description, args.priority,
                          author=author,
-                         estimate=getattr(args, "estimate", None))
+                         estimate=getattr(args, "estimate", None),
+                         test_plan=getattr(args, "test_plan", None))
     db.add_event(did, "feature_created", user=author, feature_id=fid,
                  payload=json.dumps({"title": args.title, "author": author,
                                      "estimate": getattr(args, "estimate", None)}))
@@ -127,6 +128,16 @@ def cmd_add_feature(args):
 
 def cmd_add_subtask(args):
     """Create a Task (Firestore collection: subtasks, displayed as 'Task' in the UI)."""
+    # Guard: parent Story must have a test_plan before tasks can be added.
+    feat = db.get_feature(args.feature_id)
+    if not feat:
+        raise SystemExit(f"feature {args.feature_id} not found")
+    if not (feat.get("test_plan") or "").strip():
+        raise SystemExit(
+            f"Story '{feat.get('title', args.feature_id)}' has no test_plan.\n"
+            f"Populate it first:\n"
+            f"  dcli edit-feature --feature-id {args.feature_id} --test-plan \"<plan>\""
+        )
     did = resolve_director_id(args.director, getattr(args, "project", None))
     author = _current_user()
     sid = db.add_subtask(args.feature_id, args.title, args.description, args.priority,
@@ -272,7 +283,7 @@ def _arr_remove(existing, value):
 def _build_edit_fields(args, doc):
     """Build the dict of fields to patch from edit-* CLI args."""
     fields = {}
-    for k in ("title", "description", "status", "assigned_to", "due_date", "start_date", "adr_url", "estimate"):
+    for k in ("title", "description", "status", "assigned_to", "due_date", "start_date", "adr_url", "estimate", "test_plan"):
         v = getattr(args, k.replace("-", "_"), None)
         if v is not None:
             fields[k] = v
@@ -990,6 +1001,8 @@ def main():
         sp.add_argument("--priority", type=int, default=3)
         sp.add_argument("--estimate", default=None,
                         help="T-shirt size: XS / S / M / L / XL. Required by doctrine on creation.")
+        sp.add_argument("--test-plan", dest="test_plan", default=None,
+                        help="Test plan for this Story (required before tasks can be added).")
         sp.set_defaults(func=cmd_add_feature)
 
     sp = sub.add_parser("archive", help="Soft-archive a Story (feature) or Task (subtask). Reversible.")
@@ -1071,6 +1084,8 @@ def main():
     sp = sub.add_parser("edit-feature")
     sp.add_argument("--feature-id", required=True)
     _add_edit_args(sp)
+    sp.add_argument("--test-plan", dest="test_plan", default=None,
+                    help="Test plan for this Story (required before tasks can be added).")
     sp.set_defaults(func=cmd_edit_feature)
 
     sp = sub.add_parser("edit-subtask")

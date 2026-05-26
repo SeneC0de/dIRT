@@ -5,122 +5,106 @@ description: Implement the changes specified in an accepted ADR. Trigger when th
 
 # Executing an ADR
 
-You are the **coder head**. An ADR has been drafted (and usually accepted) on a branch. Your job is to decompose it into 2–4 Tasks on the board so progress is visible, implement the code/config changes it specifies, then open an implementation PR. The ADR PR and the implementation PR are deliberately split — different review audiences.
+Implement a specific ADR's decision in code. ADRs live on the board (Firestore) and may target dIRT itself or any project Jones owns (dASH, dWEB, dCAD, dACE, etc.). You always launch from the dIRT repo; this skill handles `cd`'ing into the target project's repo when the ADR points elsewhere.
 
-## Harness pitfalls (READ BEFORE YOU TYPE BASH)
+ADRs are *decisions*. PRs are *delivery*. This skill ends at `git push`. Opening a PR is not part of executing an ADR.
 
-The CI sandbox rejects three Bash patterns. Every rejection burns a turn. **Avoid them:**
+## CLI
 
-1. **No `\` line continuations.** Write each chain on a single line with `&&`. Multi-line with backslashes is rejected as "Contains backslash-escaped whitespace."
-2. **No `"$VAR:something"`.** A double-quoted string containing `$var:` is rejected as "zsh `$name:mod` inside double-quotes." Either unquote (`origin/$BRANCH:docs/...` is fine — the `:` is git syntax, not a zsh modifier) or inline the value (`origin/feature-abc-adr-0041:docs/...` literally).
-3. **No writes to `/tmp/`.** The agent's sandbox only allows writes inside `$GITHUB_WORKSPACE` (the checkout). Use `.work/` for scratch files: `mkdir -p .work` then redirect to `.work/adr.md` etc.
-
-## Board CLI — CI environment only
-
-**Always use `python .github/scripts/agent_cli.py --director $DIRECTOR_ID` for every board operation.** Never use `dcli`.
-
-`dcli` is a local shell shim that exists only on the developer's machine. It is NOT on PATH in GitHub Actions. If `CLAUDE.md` in this repo says to use `dcli` — that instruction is for local Cowork sessions, not for this workflow. Ignore it here. `agent_cli.py` is deployed to `.github/scripts/` in every project repo specifically for this workflow.
-
-Also: every Bash invocation is one turn. Chain with `&&` inside ONE call. Parallelize `Read`/`Glob`/`Grep`/`Edit`/`Write` in a single message.
-
-Target: **7–9 turns**.
-
-## Turn 1 — Resolve ADR + prep impl branch (one Bash, inlined)
-
-The workflow's prompt already had you Read `.agent_context.json` and this skill in Turn 0. From `.agent_context.json`, find the ADR entry with `number == N`. Note its **`id`** (Firestore doc id) and pick a slug from the title (e.g. `fix-receipts-400`). Also note the implementation Story's `feature_id` if `.agent_context.json` shows one (status `open` or `blocked`, `adr_number == N`); auto-dispatch from approval always sets one.
-
-**ADRs live in Firestore, not git.** Fetch the body via `agent_cli.py get-adr <ID>`. In ONE Bash invocation, on ONE line, with values INLINED (no shell vars for the ADR id or slug):
+Use dIRT's CLI explicitly — not the bare `dcli` on PATH (that resolves to the company's `director-pattern` CLI):
 
 ```
-mkdir -p .work && python .github/scripts/agent_cli.py --director $DIRECTOR_ID get-adr <ADR_ID> > .work/adr-meta.json && python3 -c "import json,sys; d=json.load(open('.work/adr-meta.json')); open('.work/adr.md','w',encoding='utf-8').write(d.get('body') or '')" && git fetch origin <DEFAULT> && git checkout -b impl/adr-<NNNN>-<slug> origin/<DEFAULT>
+python C:/Users/randa/source/repos/dIRT/agent_cli.py <command> ...
 ```
 
-Where `<DEFAULT>` is the repo's default branch — most repos use `main`; **dCAD, dACE, and dWEB use `master`**. If unsure, run `git symbolic-ref refs/remotes/origin/HEAD` as a quick separate Bash (one turn) before this chain.
-
-If `.work/adr.md` ends up empty (legacy ADRs from before the Firestore-body migration), fall back to fetching from git: open `.work/adr-meta.json`, look at the `url` field, parse `<BRANCH>` + path, then `git fetch origin <BRANCH> && git show origin/<BRANCH>:<PATH> > .work/adr.md`. This is the fallback path only.
-
-If `.agent_context.json` did NOT show an implementation Story (manual / human-DM path), tack on at the end of the same chain:
+## Step 1 — Resolve the ADR
 
 ```
- && python .github/scripts/agent_cli.py --director $DIRECTOR_ID add-story --title "Implement ADR <NNNN>: <Title>" --description "Implements ADR <NNNN>."
+python C:/Users/randa/source/repos/dIRT/agent_cli.py get-adr <N>
 ```
 
-The story_id will be in the JSON output.
+`get-adr` accepts an integer ADR number directly. From the returned JSON, capture: `number`, `title`, `status`, `director_id`, `body`.
 
-## Turn 2 — Read ADR + scope (parallel)
+- If `body` is empty, stop and tell the user — there is nothing to implement.
+- If `status` is not `accepted`, ask the user whether to proceed anyway. Don't silently implement a draft or proposed ADR.
 
-Single message, multiple parallel tool calls:
+Derive a kebab-case slug from the title (e.g. `fix-receipts-400`).
 
-- `Read .work/adr.md`
-- `Glob` / `Grep` calls in parallel for any files the ADR mentions but whose paths you don't yet know
-- `Read` calls in parallel for files the ADR names explicitly
+## Step 2 — Resolve the target repo
 
-## Turn 3 — Decompose into 2–4 Tasks (one Bash)
+If `director_id == "dirt"`, the target is the dIRT repo itself: `C:/Users/randa/source/repos/dIRT`.
 
-Derive 2–4 Tasks from the ADR's **Decision** and **Consequences**. Each is a discrete unit. Run on a single line, `&&`-chained:
+Otherwise:
 
 ```
-python .github/scripts/agent_cli.py --director $DIRECTOR_ID add-task --feature-id <STORY_ID> --title "<Task 1>" && python .github/scripts/agent_cli.py --director $DIRECTOR_ID add-task --feature-id <STORY_ID> --title "<Task 2>" && python .github/scripts/agent_cli.py --director $DIRECTOR_ID add-task --feature-id <STORY_ID> --title "<Task 3>"
+python C:/Users/randa/source/repos/dIRT/agent_cli.py list-projects
 ```
 
-Capture each `subtask_id` from stdout. Don't over-decompose — Tasks are checkpoints, not micromanagement; 1 commit per Task is typical.
+Find the entry whose `project_id == director_id`. Use its `repo_path`. Every subsequent command runs **inside that repo** — either `cd` once per Bash call, or use absolute paths.
 
-## Turn 4 — Implement (parallel Edit/Write)
+## Step 3 — Prep the implementation branch
 
-Single message, multiple `Edit`/`Write` blocks in parallel — one per file changed. `Edit` for surgical changes, `Write` only for new files or full rewrites. Keep changes focused on what the ADR specifies; no opportunistic refactoring.
+In the target repo:
 
-## Turn 5 — Verify (one Bash)
+```
+git fetch origin && git checkout -b impl/adr-<NNNN>-<slug> origin/<default-branch>
+```
 
-Run the project's test command:
+Most repos use `main`. **dCAD, dACE, and dWEB use `master`.** If unsure, check first:
+
+```
+git symbolic-ref refs/remotes/origin/HEAD
+```
+
+## Step 4 — Read the ADR + scope the change
+
+The ADR `body` is already in the JSON from Step 1 — no scratch file needed. In a single message, fire parallel `Glob` / `Grep` / `Read` calls against the files the ADR names or implies. The goal is a clear picture of every site that needs to change before you touch any of them.
+
+## Step 5 — Implement
+
+Single message, parallel `Edit` / `Write` calls — one block per file. `Edit` for surgical changes; `Write` only for new files or full rewrites.
+
+Stay inside the ADR's stated scope. No opportunistic refactoring, no surrounding cleanup, no "while I'm here" fixes. If you spot real adjacent problems, surface them in your final reply for a follow-up — don't widen the diff.
+
+## Step 6 — Verify
+
+Run the project's test command if one obviously applies:
 
 - .NET: `dotnet test`
 - Python: `pytest`
-- Web: `npm test` (or the package.json script the README names)
+- Web/Node: `npm test` (consult `package.json` scripts)
 
-If tests fail, fix the underlying issue. Don't skip / `xfail` / comment out.
+If tests fail, fix the root cause. Don't skip, `xfail`, or comment out.
 
-## Turn 6 — Commit + push (one Bash, single line, inlined)
+If the project has no clear test command, or the existing tests don't cover this change, say so out loud in the final reply rather than claiming success. For UI/frontend changes, launch the dev server and click through the change in a browser — type-checks and unit tests verify code, not features.
+
+## Step 7 — Commit + push
 
 ```
-git add <file1> <file2> ... && git commit -m "ADR <NNNN>: <one-line summary>" && git push -u origin impl/adr-<NNNN>-<slug>
+git add <file1> <file2> ...
+git commit -m "ADR <NNNN>: <one-line summary>"
+git push -u origin impl/adr-<NNNN>-<slug>
 ```
 
-Use **explicit file paths** in `git add` — NOT `git add -A` (which would sweep your `.work/` scratch files into the commit). Capture the commit SHA from `git push` or by running `git rev-parse HEAD` in the same chain.
+Use **explicit file paths** in `git add` — not `-A` or `.`. The user maintains uncommitted scratch work in other paths; sweep-everything stages bring it along.
 
-**Do NOT call `gh pr create`.** The GitHub Actions token in this workflow lacks `pull-requests: write` in most repos, and creating PRs for the implementation branch was the wrong default anyway — review happens on the board. Push the branch and stop there. The branch URL is `https://github.com/<owner>/<repo>/tree/impl/adr-<NNNN>-<slug>` — construct it directly; no API call needed.
+## Step 8 — Report
 
-## Turn 7 — Close out (one Bash + one Write in parallel)
+Tell the user, in 2–3 sentences:
 
-Single message, two parallel tool calls:
+- The branch name and the remote URL: `https://github.com/<owner>/<repo>/tree/impl/adr-<NNNN>-<slug>`.
+- A one-line summary of what changed.
+- Anything that needed a judgment call, plus any scope you deliberately deferred.
 
-- `Bash` (single line, `&&`-chained):
-  ```
-  python .github/scripts/agent_cli.py --director $DIRECTOR_ID complete-task --subtask-id <SUB1> && python .github/scripts/agent_cli.py --director $DIRECTOR_ID complete-task --subtask-id <SUB2>
-  ```
-- (parallel) `Write .work/agent_reply.txt` — 2–3 plain sentences naming the **implementation branch URL** and a one-line summary of the diff. No PR URL — there is no PR. No persona, no fluff. The post-step picks this up from `.work/` (with `/tmp/` as legacy fallback).
+Then stop.
 
-Do **not** call `mark-adr-accepted`. The ADR was already marked accepted on the dashboard at approval time — that's what triggered this coder run.
+## Out of scope for this skill
 
-## Stop conditions
+- **No PR creation.** Review/merge is a separate step the user owns.
+- **No board task decomposition.** Local execution is interactive — progress is visible directly; board tasks would just add noise.
+- **No `mark-adr-accepted`.** Approval happens before this skill runs.
+- **No new ADRs.** If implementation reveals a needed decision, surface it in the reply and stop — don't draft.
 
-You are **done** when:
+## When the ADR doesn't fit
 
-- 2–4 Tasks created (Turn 3), all `complete-task`'d (Turn 7).
-- Implementation branch pushed (no PR).
-- `.work/agent_reply.txt` exists with the branch URL.
-
-Then:
-
-- **Do not** re-read your own diff.
-- **Do not** open a PR.
-- **Do not** poll CI.
-- **Do not** explore unrelated files.
-- **Do not** write additional ADRs — if implementation reveals a needed decision, mention it in the reply and stop.
-
-## When you bust the budget
-
-**Hard stop at turn 45.** Your ceiling is 50; reserve at least 5 turns to write `.work/agent_reply.txt` and update the board. If you are on turn 45 and not done, write the reply immediately and take no further actions — not one more Bash, not one more Read. The post-step will surface your reply. Common causes for overrun:
-
-- A Bash invocation hit a harness rejection (backslash-escaped whitespace, `"$VAR:..."`, or `/tmp/` redirect). Reread the pitfalls section and retry without that pattern.
-- The ADR scope was wider than 4 Tasks. Next run: decompose into a single "ADR <N> phase 1" Task and surface the rest in your reply for a follow-up.
-- Tests failed and debugging ate turns. Acceptable — note it in the reply.
+If the ADR's scope grows past ~4 files of changes, or you find it contradicts current code in a way that requires reinterpreting the Decision, **stop and ask** rather than reshaping it on the fly. The correct response is usually a follow-up ADR (supersedes / amends), not silent expansion.

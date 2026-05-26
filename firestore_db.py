@@ -210,10 +210,10 @@ def get_director(director_id):
 FEATURE_STATUSES = ("open", "claimed", "in_progress", "blocked", "needs-testing", "done", "cancelled")
 
 def add_feature(director_id, title, description="", priority=3,
-                author=None, estimate=None):
+                author=None, estimate=None, test_plan=None):
     data = {"director_id": director_id, "title": title, "description": description,
             "priority": priority, "status": "open", "archived": False,
-            "author": author, "estimate": estimate,
+            "author": author, "estimate": estimate, "test_plan": test_plan,
             "created_at": now()}
     fid = _create("features", data)
     # backfill `id` for consumers reading via _get
