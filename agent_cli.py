@@ -675,11 +675,26 @@ def cmd_list_adrs(args):
     out(db.list_adrs(status=args.status, limit=args.limit))
 
 
+def _resolve_adr_arg(adr_arg):
+    """Resolve an ADR CLI argument to its Firestore doc ID.
+
+    If `adr_arg` is digits-only, look up the ADR by its `number` field and
+    return the real doc ID. Otherwise treat `adr_arg` as a literal doc ID.
+
+    Raises SystemExit if a numeric lookup finds nothing — better to fail
+    loudly than create a ghost doc at /adrs/<number>."""
+    if isinstance(adr_arg, str) and adr_arg.isdigit():
+        rec = db.get_adr_by_number(int(adr_arg))
+        if not rec:
+            sys.exit(f"no ADR with number {adr_arg}")
+        return rec["id"]
+    return adr_arg
+
+
 def cmd_get_adr(args):
-    try:
-        n = int(args.adr_id)
-        rec = db.get_adr_by_number(n)
-    except ValueError:
+    if isinstance(args.adr_id, str) and args.adr_id.isdigit():
+        rec = db.get_adr_by_number(int(args.adr_id))
+    else:
         rec = db.get_adr(args.adr_id)
     if not rec: sys.exit(f"ADR {args.adr_id} not found")
     out(rec)
@@ -697,13 +712,15 @@ def cmd_update_adr(args):
     if getattr(args, "body", None) is not None:
         fields["body"] = args.body
     if not fields: sys.exit("nothing to update — pass at least one --<field>")
-    db.update_adr(args.adr_id, **fields)
-    out({"adr_id": args.adr_id, "updated": list(fields.keys())})
+    adr_id = _resolve_adr_arg(args.adr_id)
+    db.update_adr(adr_id, **fields)
+    out({"adr_id": adr_id, "updated": list(fields.keys())})
 
 
 def cmd_delete_adr(args):
-    db.delete_adr(args.adr_id)
-    out({"adr_id": args.adr_id, "deleted": True})
+    adr_id = _resolve_adr_arg(args.adr_id)
+    db.delete_adr(adr_id)
+    out({"adr_id": adr_id, "deleted": True})
 
 
 def cmd_mark_adr_accepted(args):
