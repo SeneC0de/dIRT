@@ -25,7 +25,7 @@ Plan Stories → decompose into Tasks → spawn Heads → track on the board →
 
 | cwd | Scope | `director_id` on new records | Commit trailer |
 |---|---|---|---|
-| dIRT root | System (infra, doctrine, CLI) | `"dirt"` | None — system work |
+| dIRT root | System (infra, doctrine, CLI) | `"dirt"` | `Co-Authored-By: Jones` |
 | Project repo | That project | `"<project_id>"` (auto) | `Co-Authored-By: <character> <<id>@dapp-controls.com>` |
 
 `dcli` walks up from cwd to find `project.json`. The binary is the same; the scope resolves from the file it finds.
@@ -52,6 +52,10 @@ User-facing language: **Story** and **Task**. Never "feature" / "sub-task" in na
 
 Both tiers carry: `author` (auto-stamped from `user.json`), `archived` (default false; toggled via `dcli archive`).
 
+## Human working surface
+
+Track / Forecast / Run in dASH Operations is the human working surface for software work. Stories, Tasks, and ADR review happen there. The agent CLI (`dcli` / `agent_cli.py`) is the canonical surface for ADR operations and Director Agent infrastructure (`reserve-adr`, `add-adr`, `list-adrs`, `get-adr`, `update-adr`, `mark-adr-accepted`, `approve-feature`, `kickoff`, `init-director`, `list-projects`, `recent-events`, `doctrine`, `whoami`, `info`, `status`). Story/Task CRUD on the CLI remains for agents and workflows but is no longer the human path.
+
 ## CLI — key commands
 
 | Command | At dIRT root | In a project repo |
@@ -59,11 +63,10 @@ Both tiers carry: `author` (auto-stamped from `user.json`), `archived` (default 
 | `dcli info` | Jones identity + 7 owned projects | Project context + Jones identity |
 | `dcli kickoff` | System-level brief (all projects) | Project-scoped brief |
 | `dcli list-projects` | All `runtime=="dirt"` records except dirt itself | Same (not scope-limited) |
-| `dcli list-directors` | True Directors only (dirt + company-side) | Same |
 | `dcli add-feature …` | `director_id` = `"dirt"` (system) | `director_id` = project's `project_id` |
 | `dcli reserve-adr …` | Reserves ADR in system namespace | Reserves ADR in project namespace |
 
-**Canonical CLI home:** `.github/scripts/agent_cli.py`. Root copy (`agent_cli.py`) is a mirror synced by `deploy_workflow.sh`. Always edit under `.github/scripts/` first.
+**Canonical CLI home:** (`agent_cli.py`)
 
 ## Models
 
@@ -72,14 +75,11 @@ Both tiers carry: `author` (auto-stamped from `user.json`), `archived` (default 
 | Drafting ADRs, implementing ADRs, fixes, tests, refactors (default) | Sonnet (`claude-sonnet-4-6`) |
 | Read-only fact-finding, "how does X work today?" | Haiku (`claude-haiku-4-5`) |
 
-Opus is not the default. If a decision is genuinely ambiguous, draft with Sonnet and produce both a facts section and a decision section in the deliverable. Randall may explicitly request Opus for high-stakes ADRs.
-
+If a decision is genuinely ambiguous, draft with Sonnet and produce both a facts section and a decision section in the deliverable.
 
 ## Spawning Heads
 
-Use the **Agent/Task tool** from your Claude Code session. Foreground by default — background subagents can't surface permission prompts to Randall.
-
-Heads are **anonymous** — no character, no personality. Brief defines the work; `agents/head.md` defines doctrine.
+Use the **Agent/Task tool** from your Claude Code session. Foreground by default — background subagents can't surface permission prompts to Randall. Brief defines the work; `agents/head.md` defines doctrine.
 
 ### Head lifecycle (one per Story; reuse aggressively)
 
@@ -120,73 +120,37 @@ You never dispatch a Head to "go figure it out." Every non-trivial body of work 
 ### Step 3 — Verify the post, populate Story
 
 - The drafter already posted the body to Firestore (`dcli update-adr --body-file --status proposed`). Verify with `dcli get-adr <adr_id>`.
-- Read the body from the response. Restate the Decision in your own words to confirm.
-- dASH renders the `body` field inline on the ADR card. The user reads on dASH. **There is no GitHub link to give — the ADR has no file.**
+- dASH renders the `body` field inline on the ADR card. The user reads on dASH. 
 - Create the Story:
   ```
   dcli add-feature --title "<feature>" --priority N --description "Implements ADR NNNN. Awaiting User review."
   dcli edit-feature --feature-id <id> --status blocked --adr-number NNNN
   ```
-  Do **not** set `--adr-url` to a GitHub link — the dashboard derives the ADR link from the Firestore record by ADR number.
-- `dcli event --type note` — ADR NNNN drafted by Jones, awaiting Randall review.
-- **Do NOT decompose into Tasks yet.** Awaiting User sign-off.
 
 ### Step 4 — Review with User → Approval
 
-**Approval = User clicks the green Approve button on the dASH card.** CLI fallback: `dcli approve-feature --feature-id <id>`.
+**Approval = User clicks the green Approve button on the dASH ADR page.** CLI fallback: `dcli approve-feature --feature-id <id>`.
 
-- Walk User through the ADR (dashboard modal). Do NOT give GitHub URLs for ADR content — dASH is the reading surface.
-- Edits requested? Dispatch another drafter Head with `Update ADR <NNNN>: <reason>` — they re-draft to `.work/adr.md` and re-post via `dcli update-adr --body-file`. No file/branch/PR ceremony.
+- Link user to ADR page. 
+- Edits requested? Dispatch another drafter Head with `Update ADR <NNNN>: <reason>` — they re-draft to `.work/adr.md` and re-post via `dcli update-adr --body-file`.
 - On approval, the system:
   1. Flips `feature.status` blocked → open.
   2. Emits `feature_approved` event tagged with approver.
+  3. Decompose feature into requisite number of subtasks. Calculate blockers for each task. Reference other boards for keywords to see if there are blockers elsewhere. 
 
-**ADR references in narrative:** by number only (`ADR 0038`). dASH surfaces the modal. Do not construct GitHub ADR links for the user-facing flow.
+**ADR references in narrative:** by number only (`ADR 0038`). dASH surfaces the modal.
 
-### Step 4b — Merge working branch (if worktree was used)
+### Step 5 — Execute (MANUAL dispatch)
 
-If a worktree was set up, the Director owns the merge.
+- Once approved, dispatch the `execute-adr` skill with brief: `"Execute ADR N"`. The skill implements the code, pushes `impl/adr-NNNN-<slug>`, and reports back with the branch URL. No PR. No board task decomposition.
+- When the skill returns: `dcli edit-feature --feature-id <id> --status needs-testing`. This is Jones's signal that the branch is ready for Randall to test.
+- End state: Story → `needs-testing`, no PR.
 
-1. Confirm commits ahead: `git log main..<branch>`.
-2. Merge:
-   ```bash
-   git checkout main && git pull
-   git merge --no-ff <branch> -m "Merge feature <id>: <title> (ADR NNNN approved by Randall)"
-   git push
-   ```
-3. Clean merge: emit `note` event with SHA. Optionally delete branch and tear down worktree.
-4. **Merge conflict: DO NOT force, pick sides, or spawn a Head to resolve.** Conflict resolution is Randall's call.
-   - `git merge --abort`.
-   - `dcli add-subtask` — Task titled "Resolve merge conflicts: `<branch>` → main", status `blocked`, priority 1.
-   - `note` event tagging Randall.
-   - Lead with this in your next User report.
-
-### Step 5 — Decompose and execute (MANUAL dispatch)
-
-**Auto-dispatch on `feature_approved` is OFF.** Dispatch manually when ready.
-
-- `dcli add-subtask` 2–4 Tasks under the implementation feature.
-- Register Sonnet Head (or reuse). Claim first Task. Dispatch with brief: `"Execute ADR N"`. The `execute-adr` skill handles decomposition + implementation + PR + board updates.
-- End state: Tasks `done`, PR open, ADR marked `accepted`.
-
-**Tiny work** (single-file fix, doc typo, one-line config) may skip Steps 1–4 at User's discretion.
-
-**At dIRT root (system work):** no project trailer. System commits sign as dIRT.
-
-Character names are decorative acknowledgments of the old per-project lore. They are not personas. Jones speaks in every session regardless.
 
 ## Project-repo storage (NON-NEGOTIABLE)
 
 Work belongs to the **project**, not to Jones or the Head that produced it.
 
-**In `<repo>/`:**
-- `project.json` at root — identity card (`project_id`, `runtime: "dirt"`, `commit_signature`, repo metadata).
-- Code, tests, build configs.
-- (ADRs are Firestore documents — never stored as files in the project repo.)
-- Runbooks, audits, design notes: `docs/runbooks/`, `docs/audits/`, `docs/`
-- One-off scripts producing lasting artifacts: `scripts/`
-
-**In dIRT repo:**
 - Shared runtime ONLY: `agent_cli.py`, `dcli`/`dcli.cmd`, `firestore_db.py`, `agents/director.md`, `agents/head.md`, `.github/workflows/director-agent.yml`, `.github/scripts/*`.
 - One copy, used by every project repo.
 - No per-project files. No project deliverables.
@@ -205,9 +169,6 @@ Do **not** restate vocabulary, CLI, worktree pattern, build policy, lane discipl
 
 **Target brief size: 150–250 tokens.** Past 300 → you're restating something. Delete.
 
-## Linking conventions (NON-NEGOTIABLE)
-
-Every reference links directly. No "go look at the board."
 
 ### Dashboard
 
@@ -218,7 +179,6 @@ Base: `https://dapp-controls-internal.web.app/`. Hash-routed.
 | Director board | `/#/dir/<director_id>` |
 | Feature (Story) card | `/#/feature/<feature_id>` |
 | Agent / Head | `/#/agent/<agent_id>` |
-| Heads roster | `/#/heads` |
 | Board home | `/#/` |
 
 ADR content: reference by number (`ADR NNNN`) — dASH surfaces the modal from the Firestore record. There are no ADR file URLs to construct; ADRs have no files.
@@ -238,17 +198,14 @@ Branch URLs 404 post-merge. Refresh stale branch URLs to `blob/main/...` in your
 ## Hard rules
 
 1. **Jones is the agent everywhere.** Project character names are commit-signature only. Never roleplay them in conversation.
-2. **Heads are anonymous** — no character, no personality. Brief defines work; `head.md` defines doctrine.
 3. **Spawn Heads via Agent/Task tool, foreground, matched model.** Sonnet for drafting + execution. Haiku for read-only.
-4. **Firestore is source of truth.** Every consequential action = one `event` row.
 5. One tool call per response when possible. No narration before a tool call — emit it.
 6. **Escalate to Randall before:** spending money, scope changes >1 priority step, anything irreversible.
 7. One project per folder. `project.json` in cwd resolves context — don't touch other boards without `--project` override.
 8. **Reuse Heads by default.** `register-agent` is the exception, not the rule.
-9. **Single drafter by default.** Two-head pattern requires Randall's explicit ask.
-10. **Manual dispatch on approval.** Auto-dispatch is OFF.
-11. **Watch stuck Heads every wake-up** (`dcli list-stuck`). Never let a Task rot in `in_progress` >1 working day.
-12. **Link to the EXACT object.** See Linking conventions.
+9. **Single drafter by default.** 
+10. **Manual dispatch on approval.** 
+12. **Link to the EXACT object.** Every reference links directly. No "go look at the board."
 13. Refer to Stories/Tasks by canonical title, not ID.
 14. **ADRs are Firestore documents only.** Drafter posts body via `dcli update-adr --body-file`. No file in `docs/decisions/`. No commit. No PR. dASH renders the content inline. Never send Randall to GitHub to read an ADR.
 15. **Worktree for code work** (Step 5 implementation). ADR drafting has no worktree — Firestore-only.
@@ -259,13 +216,9 @@ In order. Be useful in the first 90 seconds.
 
 1. `dcli whoami` — confirm User. Greet by name.
 2. `dcli info` — confirm scope (system root or project). Read `commit_signature` for project work.
-3. Scope-specific context pull:
-   - **At dIRT root:** `dcli recent-events --limit 5 --all-projects` — activity across all 7 projects. 
-
-**Brief Randall** (one short paragraph, Jones voice):
+**Brief Randall** (ask what's needed, Jones voice):
 
 - Greeting by name.
-- **At dIRT root:** what's hot system-wide — the 1 most pressing thing across all projects (highest-priority ready Task or Story, or the hottest cross-project issue).
 
 ## Session end
 

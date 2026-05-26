@@ -205,10 +205,9 @@ def upsert_director(director_id, **fields):
 def get_director(director_id):
     return _get("directors", director_id)
 
-def list_directors():
-    return _runquery(_build_query("directors"))
-
 # ----- Features (displayed as "Story" in the UI) -----
+
+FEATURE_STATUSES = ("open", "claimed", "in_progress", "blocked", "needs-testing", "done", "cancelled")
 
 def add_feature(director_id, title, description="", priority=3,
                 author=None, estimate=None):
@@ -236,6 +235,8 @@ def list_features(director_id=None, status=None, assignee=None, label=None,
     return feats
 
 def update_feature(feature_id, **fields):
+    if "status" in fields and fields["status"] not in FEATURE_STATUSES:
+        raise ValueError(f"status must be one of {FEATURE_STATUSES}")
     fields["updated_at"] = now()
     _patch("features", feature_id, fields, merge=True)
 
@@ -567,6 +568,38 @@ def reserve_adr_number(title, author=None, description=None):
     aid = add_adr(number=n, title=title, url=None, status="draft",
                   author=author, description=description)
     return get_adr(aid)
+
+
+# ----- projects_meta (Operations surface — software rows) -----
+
+PROJECTS_META_STAGES = (
+    "discovery", "adr-drafting", "adr-review", "in-flight",
+    "testing", "ready-to-ship", "closed",
+)
+
+def get_projects_meta(doc_id):
+    """Return a projects_meta doc by its Firestore doc ID, or None if it doesn't exist."""
+    return _get("projects_meta", doc_id)
+
+def upsert_projects_meta(doc_id, **fields):
+    """Create or overwrite a projects_meta document with the given fields."""
+    fields["updated_at"] = now()
+    _patch("projects_meta", doc_id, fields, merge=True)
+    return doc_id
+
+def update_projects_meta_if_exists(doc_id, **fields):
+    """Patch a projects_meta doc only if it already exists. Returns True if patched, False if not found."""
+    existing = get_projects_meta(doc_id)
+    if existing is None:
+        return False
+    fields["updated_at"] = now()
+    _patch("projects_meta", doc_id, fields, merge=True)
+    return True
+
+def find_projects_meta_by_source_id(source_id):
+    """Return the first projects_meta doc whose source_id matches, or None."""
+    results = _runquery(_build_query("projects_meta", where=[("source_id", "==", source_id)], limit=1))
+    return results[0] if results else None
 
 
 def list_blocked_rollup(director_id):

@@ -362,15 +362,6 @@ def cmd_delete_subtask(args):
     out(result)
 
 
-def cmd_list_directors(args):
-    """List every Director doc in Firestore. No filtering by your own director_id — this is the
-    cross-Director discovery query, useful for cleanup and for finding stale Director records."""
-    out([{"id": d.get("id"), "name": d.get("name"),
-          "director_name": d.get("director_name"),
-          "description": d.get("description")}
-         for d in db.list_directors()])
-
-
 def cmd_list_projects(args):
     """List all project records under Jones: directors where runtime == 'dirt', excluding dirt itself.
 
@@ -636,13 +627,33 @@ def cmd_add_adr(args):
 
 
 def cmd_reserve_adr(args):
-    """Allocate the next ADR number by creating a draft stub. Hand the number to a Drafter."""
+    """Allocate the next ADR number by creating a draft stub. Hand the number to a Drafter.
+
+    If --feature-id is given and a projects_meta row already exists for that feature,
+    patch its stage to 'adr-drafting'. If no projects_meta row exists yet, this is a
+    no-op (the on_feature_created trigger in dASH creates that row — don't create it here).
+    """
     rec = db.reserve_adr_number(
         title=args.title,
         author=args.author or _current_user(),
         description=args.description,
     )
-    out({"adr_id": rec["id"], "number": rec["number"], "title": rec["title"], "status": rec["status"]})
+    result = {"adr_id": rec["id"], "number": rec["number"], "title": rec["title"], "status": rec["status"]}
+
+    feature_id = getattr(args, "feature_id", None)
+    if feature_id:
+        # Try canonical doc ID first (software_<feature_id>), then fall back to source_id query.
+        canonical_doc_id = f"software_{feature_id}"
+        patched = db.update_projects_meta_if_exists(canonical_doc_id, stage="adr-drafting")
+        if not patched:
+            # Fallback: query by source_id in case the doc was created with a different ID.
+            existing = db.find_projects_meta_by_source_id(feature_id)
+            if existing:
+                patched = db.update_projects_meta_if_exists(existing["id"], stage="adr-drafting")
+        result["projects_meta_patched"] = patched
+        result["feature_id"] = feature_id
+
+    out(result)
 
 
 def cmd_next_adr_number(args):
@@ -780,6 +791,51 @@ def cmd_list_messages(args):
     out(matched)
 
 
+_PROJECTS_META_STAGES = (
+    "discovery", "adr-drafting", "adr-review", "in-flight",
+    "testing", "ready-to-ship", "closed",
+)
+
+
+def cmd_backfill_projects_meta(args):
+    """Create one projects_meta row for a chosen feature with an explicitly-chosen stage.
+
+    This is a user-curated one-shot command (ADR 0080 §5). It does NOT check for an
+    existing row — if you run it twice you get an overwrite (idempotent fields, last-write-wins).
+    Doc ID convention: software_<feature_id>.
+
+    Row shape:
+      type = 'software'
+      source_id = <feature_id>
+      director_id = <from feature doc>
+      name = <feature.title>
+      stage = <stage arg>
+      archived = false
+      target_delivery_date = <feature.due_date if present, else null>
+    """
+    if args.stage not in _PROJECTS_META_STAGES:
+        raise SystemExit(
+            f"invalid stage {args.stage!r} — must be one of: {', '.join(_PROJECTS_META_STAGES)}"
+        )
+    feat = db.get_feature(args.feature_id)
+    if not feat:
+        raise SystemExit(f"feature {args.feature_id} not found")
+
+    doc_id = f"software_{args.feature_id}"
+    row = {
+        "type": "software",
+        "source_id": args.feature_id,
+        "director_id": feat.get("director_id"),
+        "name": feat.get("title") or args.feature_id,
+        "stage": args.stage,
+        "archived": False,
+        "target_delivery_date": feat.get("due_date") or None,
+    }
+    db.upsert_projects_meta(doc_id, **row)
+    out({"ok": True, "doc_id": doc_id, "stage": args.stage, "name": row["name"],
+         "director_id": row["director_id"], "source_id": args.feature_id})
+
+
 def cmd_approve_feature(args):
     """Unblock a feature whose ADR has been approved by the User. Sets status->open and emits a feature_approved event."""
     did = resolve_director_id(args.director, getattr(args, "project", None))
@@ -807,7 +863,6 @@ def main():
     sub.add_parser("kickoff", help="Print the canonical Director startup message (with resolved doctrine paths). Run as the first command in a fresh Claude Code session.").set_defaults(func=cmd_kickoff)
     sub.add_parser("doctrine", help="Print absolute paths to the canonical director.md + the three head templates (head_drafter.md, head_coder.md, head_triage.md) as JSON.").set_defaults(func=cmd_doctrine)
     sub.add_parser("init-director", help="Bootstrap this Director's Firestore record from project.json").set_defaults(func=cmd_init_director)
-    sub.add_parser("list-directors", help="List every Director in Firestore (cross-Director discovery).").set_defaults(func=cmd_list_directors)
     sub.add_parser("list-projects", help="List all project records under Jones (runtime='dirt', excluding dirt itself). Returns project_id, name, repo_path, github_remote, commit_signature.").set_defaults(func=cmd_list_projects)
 
     sp = sub.add_parser("delete-director", help="Permanently delete a Director and (with --cascade) its stories/tasks/agents.")
@@ -849,6 +904,9 @@ def main():
     sp.add_argument("--title", required=True, help="Short slug/title for the ADR (e.g. 'kafka-vs-sqs')")
     sp.add_argument("--author")
     sp.add_argument("--description", help="One-line summary (optional; can be set later via update-adr)")
+    sp.add_argument("--feature-id", dest="feature_id", default=None,
+                    help="Story (feature) ID linked to this ADR. If a projects_meta row exists for "
+                         "this feature, its stage is patched to 'adr-drafting'. No-op if no row exists yet.")
     sp.set_defaults(func=cmd_reserve_adr)
 
     sp = sub.add_parser("next-adr-number",
@@ -907,6 +965,20 @@ def main():
     sp = sub.add_parser("approve-feature", help="Mark a blocked feature's ADR as approved; unblocks the feature.")
     sp.add_argument("--feature-id", required=True)
     sp.set_defaults(func=cmd_approve_feature)
+
+    sp = sub.add_parser(
+        "backfill-projects-meta",
+        help=(
+            "Create (or overwrite) one projects_meta row for a Story. "
+            "User-curated per ADR 0080 §5. "
+            f"Allowed stages: {', '.join(_PROJECTS_META_STAGES)}."
+        ),
+    )
+    sp.add_argument("--feature-id", dest="feature_id", required=True,
+                    help="Story (feature) ID to backfill.")
+    sp.add_argument("--stage", required=True,
+                    help=f"One of: {', '.join(_PROJECTS_META_STAGES)}")
+    sp.set_defaults(func=cmd_backfill_projects_meta)
 
     sub.add_parser("info").set_defaults(func=cmd_info)
     sub.add_parser("status").set_defaults(func=cmd_status)
@@ -984,7 +1056,7 @@ def main():
         sp.add_argument("--title", default=None)
         sp.add_argument("--description", default=None)
         sp.add_argument("--priority", default=None, type=int)
-        sp.add_argument("--status", default=None, choices=["open","claimed","in_progress","blocked","done","cancelled"])
+        sp.add_argument("--status", default=None, choices=["open","claimed","in_progress","blocked","needs-testing","done","cancelled"])
         sp.add_argument("--assigned-to", dest="assigned_to", default=None)
         sp.add_argument("--due-date", dest="due_date", default=None, help="ISO date YYYY-MM-DD")
         sp.add_argument("--start-date", dest="start_date", default=None, help="ISO date YYYY-MM-DD")
