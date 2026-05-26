@@ -642,9 +642,8 @@ def cmd_reserve_adr(args):
 
     feature_id = getattr(args, "feature_id", None)
     if feature_id:
-        # Try canonical doc ID first (software_<feature_id>), then fall back to source_id query.
-        canonical_doc_id = f"software_{feature_id}"
-        patched = db.update_projects_meta_if_exists(canonical_doc_id, stage="adr-drafting")
+        # Doc ID convention matches dASH triggers: projects_meta/<feature_id>.
+        patched = db.update_projects_meta_if_exists(feature_id, stage="adr-drafting")
         if not patched:
             # Fallback: query by source_id in case the doc was created with a different ID.
             existing = db.find_projects_meta_by_source_id(feature_id)
@@ -802,7 +801,7 @@ def cmd_backfill_projects_meta(args):
 
     This is a user-curated one-shot command (ADR 0080 §5). It does NOT check for an
     existing row — if you run it twice you get an overwrite (idempotent fields, last-write-wins).
-    Doc ID convention: software_<feature_id>.
+    Doc ID convention: projects_meta/<feature_id> (matches the dASH on_feature_created trigger).
 
     Row shape:
       type = 'software'
@@ -821,7 +820,7 @@ def cmd_backfill_projects_meta(args):
     if not feat:
         raise SystemExit(f"feature {args.feature_id} not found")
 
-    doc_id = f"software_{args.feature_id}"
+    doc_id = args.feature_id
     row = {
         "type": "software",
         "source_id": args.feature_id,
