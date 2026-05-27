@@ -126,13 +126,16 @@ def _req(method, path, **kwargs):
         raise RuntimeError(f"Firestore {method} {path} failed [{r.status_code}]: {err}")
     return r.json() if r.text else {}
 
-def _runquery(structured_query):
+def _runquery(structured_query, transaction=None):
     """:runQuery endpoint — sits at the database root, not under /documents."""
     cfg = _config()
     db_name = cfg.get("database", "(default)")
     url = (f"https://firestore.googleapis.com/v1/projects/{cfg['project_id']}"
            f"/databases/{db_name}/documents:runQuery")
-    r = _sess().post(url, json={"structuredQuery": structured_query})
+    body = {"structuredQuery": structured_query}
+    if transaction:
+        body["transaction"] = transaction
+    r = _sess().post(url, json=body)
     if not r.ok:
         try: err = r.json()
         except Exception: err = r.text
@@ -142,6 +145,67 @@ def _runquery(structured_query):
         if "document" in item:
             out.append(_doc_to_dict(item["document"]))
     return out
+
+
+def _db_root_url() -> str:
+    """Firestore database root (not /documents) — used for transaction endpoints."""
+    cfg = _config()
+    db_name = cfg.get("database", "(default)")
+    return (f"https://firestore.googleapis.com/v1/projects/{cfg['project_id']}"
+            f"/databases/{db_name}")
+
+
+def _begin_transaction(read_write=True):
+    """Open a Firestore transaction. Returns the transaction token (bytes-as-base64 string)."""
+    url = _db_root_url() + "/documents:beginTransaction"
+    body = {"options": {"readWrite": {}} if read_write else {"readOnly": {}}}
+    r = _sess().post(url, json=body)
+    if not r.ok:
+        try: err = r.json()
+        except Exception: err = r.text
+        raise RuntimeError(f"beginTransaction failed [{r.status_code}]: {err}")
+    return r.json()["transaction"]
+
+
+def _commit(writes, transaction):
+    """Commit a list of Firestore Write objects under `transaction`.
+
+    `writes` is a list of Firestore REST Write objects:
+      - {"update": {<document resource>}, "updateMask": {...}} for creates/patches
+      - {"delete": "<doc_name>"} for deletes
+    Returns the commit response dict.
+    """
+    url = _db_root_url() + "/documents:commit"
+    r = _sess().post(url, json={"writes": writes, "transaction": transaction})
+    if not r.ok:
+        try: err = r.json()
+        except Exception: err = r.text
+        raise RuntimeError(f"commit failed [{r.status_code}]: {err}")
+    return r.json()
+
+
+def _doc_name(collection, doc_id=None):
+    """Build a Firestore document resource name."""
+    cfg = _config()
+    db_name = cfg.get("database", "(default)")
+    base = (f"projects/{cfg['project_id']}/databases/{db_name}/documents"
+            f"/{collection}")
+    return f"{base}/{doc_id}" if doc_id else base
+
+
+def _commit_batch(writes):
+    """Commit multiple writes atomically (no pre-existing transaction).
+
+    Uses a single :commit call without beginTransaction — Firestore applies
+    the writes in order with at-most-once semantics.
+    """
+    url = _db_root_url() + "/documents:commit"
+    r = _sess().post(url, json={"writes": writes})
+    if not r.ok:
+        try: err = r.json()
+        except Exception: err = r.text
+        raise RuntimeError(f"commit_batch failed [{r.status_code}]: {err}")
+    return r.json()
 
 _OP_MAP = {"==":"EQUAL", ">":"GREATER_THAN", "<":"LESS_THAN",
            ">=":"GREATER_THAN_OR_EQUAL", "<=":"LESS_THAN_OR_EQUAL", "!=":"NOT_EQUAL",
@@ -196,34 +260,35 @@ def _delete(collection, doc_id):
 
 # ----- Directors -----
 
-def upsert_director(director_id, **fields):
-    fields.setdefault("id", director_id)
+def upsert_director(project, **fields):
+    fields.setdefault("id", project)
     fields["updated_at"] = now()
-    _patch("directors", director_id, fields, merge=True)
-    return director_id
+    _patch("directors", project, fields, merge=True)
+    return project
 
-def get_director(director_id):
-    return _get("directors", director_id)
+def get_director(project):
+    return _get("directors", project)
 
 # ----- Features (displayed as "Story" in the UI) -----
 
 FEATURE_STATUSES = ("open", "claimed", "in_progress", "blocked", "needs-testing", "done", "cancelled")
 
-def add_feature(director_id, title, description="", priority=3,
+def add_feature(project, title, description="", priority=3,
                 author=None, estimate=None, test_plan=None):
-    data = {"director_id": director_id, "title": title, "description": description,
+    data = {"project": project, "title": title, "description": description,
             "priority": priority, "status": "open", "archived": False,
             "author": author, "estimate": estimate, "test_plan": test_plan,
-            "created_at": now()}
+            "created_at": now(), "updated_at": now()}
     fid = _create("features", data)
     # backfill `id` for consumers reading via _get
     _patch("features", fid, {"id": fid}, merge=True)
+    _touch_meta(project, by=author, kind="feature_created", doc_id=fid)
     return fid
 
-def list_features(director_id=None, status=None, assignee=None, label=None,
+def list_features(project=None, status=None, assignee=None, label=None,
                   due_before=None, priority_max=None, include_archived=False):
     where = []
-    if director_id:  where.append(("director_id", "==", director_id))
+    if project:  where.append(("project", "==", project))
     if status:       where.append(("status", "==", status))
     if assignee:     where.append(("assigned_to", "==", assignee))
     if label:        where.append(("labels", "array_contains", label))
@@ -239,6 +304,10 @@ def update_feature(feature_id, **fields):
         raise ValueError(f"status must be one of {FEATURE_STATUSES}")
     fields["updated_at"] = now()
     _patch("features", feature_id, fields, merge=True)
+    feat = _get("features", feature_id)
+    if feat:
+        kind = f"feature_{fields['status']}" if "status" in fields else "feature_updated"
+        _touch_meta(feat.get("project"), by=fields.get("author"), kind=kind, doc_id=feature_id)
 
 def delete_feature(feature_id, cascade=False):
     """Delete a feature. If cascade, also delete every sub-task that references it.
@@ -264,26 +333,49 @@ def get_subtask(subtask_id):
 
 # ----- Subtasks -----
 
-def add_subtask(feature_id, title, description="", priority=3, director_id=None, author=None):
-    if director_id is None:
-        feat = _get("features", feature_id)
-        if not feat: raise ValueError(f"feature {feature_id} not found")
-        director_id = feat["director_id"]
-    data = {"feature_id": feature_id, "director_id": director_id, "title": title,
-            "description": description, "priority": priority, "status": "open",
-            "agent_id": None, "author": author, "archived": False,
-            "created_at": now(),
+SUBTASK_STATUSES = ("proposed", "open", "claimed", "in_progress", "blocked", "done", "cancelled")
+
+def add_subtask(feature_id=None, title="", description="", priority=3, project=None,
+                author=None, adr_id=None, status="open"):
+    """Create a subtask.
+
+    `feature_id` and `adr_id` are both optional so that proposed subtasks
+    created during ADR drafting can carry adr_id without a feature yet.
+    `status` defaults to 'open'; use 'proposed' for subtasks created before
+    the ADR is approved (feature_id will be None at that point).
+
+    If `project` is not given and `feature_id` is set, it is resolved from
+    the parent feature. If both are None, raises ValueError.
+    """
+    if status not in SUBTASK_STATUSES:
+        raise ValueError(f"status must be one of {SUBTASK_STATUSES}, got {status!r}")
+    if project is None:
+        if feature_id:
+            feat = _get("features", feature_id)
+            if not feat: raise ValueError(f"feature {feature_id} not found")
+            project = feat["project"]
+        elif adr_id:
+            adr = _get("adrs", adr_id)
+            if not adr: raise ValueError(f"adr {adr_id} not found")
+            project = adr.get("project")
+        if project is None:
+            raise ValueError("project could not be resolved; pass project= explicitly")
+    data = {"feature_id": feature_id, "adr_id": adr_id, "project": project,
+            "title": title, "description": description, "priority": priority,
+            "status": status, "agent_id": None, "author": author, "archived": False,
+            "created_at": now(), "updated_at": now(),
             "started_at": None, "completed_at": None, "output_ref": None}
     sid = _create("subtasks", data)
     _patch("subtasks", sid, {"id": sid}, merge=True)
     return sid
 
-def list_subtasks(feature_id=None, director_id=None, status=None,
+def list_subtasks(feature_id=None, project=None, status=None,
                   assignee=None, label=None, due_before=None, priority_max=None,
-                  include_archived=False):
+                  include_archived=False, adr_id=None):
     where = []
     if feature_id:   where.append(("feature_id", "==", feature_id))
-    if director_id:  where.append(("director_id", "==", director_id))
+    if adr_id:       where.append(("adr_id", "==", adr_id))
+    if project:      where.append(("project", "==", project))
     if status:       where.append(("status", "==", status))
     if assignee:     where.append(("assigned_to", "==", assignee))
     if label:        where.append(("labels", "array_contains", label))
@@ -303,6 +395,12 @@ def start_subtask(subtask_id):
 def update_subtask(subtask_id, **fields):
     fields["updated_at"] = now()
     _patch("subtasks", subtask_id, fields, merge=True)
+    sub = _get("subtasks", subtask_id)
+    if sub:
+        kind = f"task_{fields['status']}" if "status" in fields else "task_updated"
+        fid = sub.get("feature_id")
+        doc_id = fid if fid else sub.get("project")
+        _touch_meta(sub.get("project"), by=fields.get("author"), kind=kind, doc_id=doc_id)
 
 def delete_subtask(subtask_id):
     _delete("subtasks", subtask_id)
@@ -311,12 +409,17 @@ def delete_subtask(subtask_id):
 
 def complete_subtask(subtask_id, output_ref=None):
     _patch("subtasks", subtask_id,
-           {"status": "done", "completed_at": now(), "output_ref": output_ref})
+           {"status": "done", "completed_at": now(), "updated_at": now(), "output_ref": output_ref})
+    sub = _get("subtasks", subtask_id)
+    if sub:
+        fid = sub.get("feature_id")
+        doc_id = fid if fid else sub.get("project")
+        _touch_meta(sub.get("project"), by=None, kind="task_done", doc_id=doc_id)
 
 # ----- Agents -----
 
-def register_agent(director_id, role, name=None, system_prompt=None, parent_id=None, head_type=None):
-    data = {"director_id": director_id, "role": role, "name": name,
+def register_agent(project, role, name=None, system_prompt=None, parent_id=None, head_type=None):
+    data = {"project": project, "role": role, "name": name,
             "system_prompt": system_prompt, "parent_id": parent_id,
             "head_type": head_type,
             "status": "idle", "created_at": now()}
@@ -327,30 +430,30 @@ def register_agent(director_id, role, name=None, system_prompt=None, parent_id=N
 def set_agent_status(agent_id, status):
     _patch("agents", agent_id, {"status": status, "updated_at": now()})
 
-def list_agents(director_id):
-    return _runquery(_build_query("agents", where=[("director_id", "==", director_id)]))
+def list_agents(project):
+    return _runquery(_build_query("agents", where=[("project", "==", project)]))
 
 # ----- Events -----
 
-def add_event(director_id, type, agent_id=None, feature_id=None, subtask_id=None, payload=None, user=None):
-    data = {"director_id": director_id, "type": type, "agent_id": agent_id,
+def add_event(project, type, agent_id=None, feature_id=None, subtask_id=None, payload=None, user=None):
+    data = {"project": project, "type": type, "agent_id": agent_id,
             "feature_id": feature_id, "subtask_id": subtask_id,
             "payload": payload, "user": user, "ts": now()}
     eid = _create("events", data)
     _patch("events", eid, {"id": eid}, merge=True)
     return eid
 
-def recent_events(director_id, limit=25):
+def recent_events(project, limit=25):
     return _runquery(_build_query("events",
-                                  where=[("director_id", "==", director_id)],
+                                  where=[("project", "==", project)],
                                   order_by=[("ts", "DESCENDING")],
                                   limit=limit))
 
 # ----- Artifacts -----
 
-def add_artifact(director_id, kind, path_or_url, description="",
+def add_artifact(project, kind, path_or_url, description="",
                  feature_id=None, subtask_id=None, agent_id=None):
-    data = {"director_id": director_id, "kind": kind, "path_or_url": path_or_url,
+    data = {"project": project, "kind": kind, "path_or_url": path_or_url,
             "description": description, "feature_id": feature_id,
             "subtask_id": subtask_id, "agent_id": agent_id, "created_at": now()}
     aid = _create("artifacts", data)
@@ -359,16 +462,16 @@ def add_artifact(director_id, kind, path_or_url, description="",
 
 # ----- Rollup -----
 
-def status(director_id, include_archived=False):
-    features = list_features(director_id, include_archived=include_archived)
-    subtasks = list_subtasks(director_id=director_id, include_archived=include_archived)
-    agents   = list_agents(director_id)
-    events   = recent_events(director_id, limit=10)
+def status(project, include_archived=False):
+    features = list_features(project, include_archived=include_archived)
+    subtasks = list_subtasks(project=project, include_archived=include_archived)
+    agents   = list_agents(project)
+    events   = recent_events(project, limit=10)
     by_feat = {}
     for s in subtasks:
         by_feat.setdefault(s.get("feature_id") or "_orphan", []).append(s)
     return {
-        "director": get_director(director_id),
+        "director": get_director(project),
         "features": features,
         "subtasks_by_feature": by_feat,
         "agents": agents,
@@ -436,7 +539,7 @@ def client():
     minimal surface rebucket_dcad.py and migrate_dcad.py used."""
     return _ClientShim()
 
-def list_stuck(director_id, hours=8):
+def list_stuck(project, hours=8):
     """Return sub-tasks that have been in_progress longer than `hours` — Heads that may have died mid-task.
 
     A Head is considered "stuck" if status==in_progress and started_at is older than the threshold.
@@ -444,7 +547,7 @@ def list_stuck(director_id, hours=8):
     """
     from datetime import timedelta
     threshold = now() - timedelta(hours=float(hours))
-    in_progress = list_subtasks(director_id=director_id, status="in_progress")
+    in_progress = list_subtasks(project=project, status="in_progress")
     threshold_iso = threshold.isoformat().replace("+00:00", "Z")
     stuck = []
     for s in in_progress:
@@ -493,7 +596,7 @@ ADR_STATUSES = ("draft", "proposed", "accepted", "rejected", "superseded")
 
 def add_adr(number, title, url=None, status="draft", author=None,
             decision_date=None, description=None, supersedes=None,
-            director_id=None):
+            project=None):
     """Create an ADR. `number` is required and must be unique per project; the caller
     decides the numbering scheme (e.g. 27 for ADR-0027). `supersedes` is a list of
     ADR ids this one replaces; this function also patches the older docs' `superseded_by`.
@@ -510,7 +613,7 @@ def add_adr(number, title, url=None, status="draft", author=None,
         "description": description,
         "supersedes": list(supersedes or []),
         "superseded_by": None,
-        "director_id": director_id,
+        "project": project,
         "created_at": now(),
         "updated_at": now(),
     }
@@ -545,6 +648,11 @@ def update_adr(adr_id, **fields):
         raise ValueError(f"status must be one of {ADR_STATUSES}")
     fields["updated_at"] = now()
     _patch("adrs", adr_id, fields, merge=True)
+    if "status" in fields:
+        adr = _get("adrs", adr_id)
+        if adr and adr.get("project"):
+            kind = f"adr_{fields['status']}"
+            _touch_meta(adr["project"], by=fields.get("accepted_by"), kind=kind)
     return adr_id
 
 def delete_adr(adr_id):
@@ -560,14 +668,65 @@ def next_adr_number():
         return 1
     return int(top[0].get("number") or 0) + 1
 
-def reserve_adr_number(title, author=None, description=None):
-    """Allocate the next ADR number by creating a stub doc (status='draft', url=None).
-    Hand the returned number to a Drafter to write `docs/decisions/NNNN-slug.md` against,
-    then patch the URL via update_adr after the file is committed. Returns the stub doc."""
-    n = next_adr_number()
-    aid = add_adr(number=n, title=title, url=None, status="draft",
-                  author=author, description=description)
-    return get_adr(aid)
+def reserve_adr_number(title, author=None, description=None, project=None):
+    """Atomically allocate the next ADR number using a Firestore read-write transaction.
+
+    Flow:
+      1. beginTransaction (readWrite)
+      2. runQuery max(number) inside the transaction
+      3. commit with a single document write: the new stub ADR doc
+
+    Collision safety: the transaction's read set includes the query snapshot;
+    if another writer inserts a doc concurrently, Firestore aborts and retries
+    (up to `_MAX_RESERVE_RETRIES` times).
+
+    Returns the newly created stub ADR doc (same shape as get_adr()).
+    """
+    _MAX_RESERVE_RETRIES = 5
+    for attempt in range(_MAX_RESERVE_RETRIES):
+        txn = _begin_transaction(read_write=True)
+        # Read the highest-numbered ADR inside the transaction
+        top = _runquery(
+            _build_query("adrs", order_by=[("number", "DESCENDING")], limit=1),
+            transaction=txn,
+        )
+        n = (int(top[0].get("number") or 0) + 1) if top else 1
+
+        # Build the stub doc fields
+        ts = now()
+        stub_fields = {
+            "number":       _to_v(n),
+            "title":        _to_v(title),
+            "url":          _to_v(None),
+            "status":       _to_v("draft"),
+            "author":       _to_v(author),
+            "decision_date": _to_v(None),
+            "description":  _to_v(description),
+            "supersedes":   _to_v([]),
+            "superseded_by": _to_v(None),
+            "project":      _to_v(project),
+            "body":         _to_v(None),
+            "created_at":   _to_v(ts),
+            "updated_at":   _to_v(ts),
+        }
+        # Firestore auto-generates the doc ID when we POST to the collection.
+        # In a commit Write we must supply a doc name, so we generate one:
+        import uuid as _uuid
+        new_id = _uuid.uuid4().hex
+        doc_name = _doc_name("adrs", new_id)
+        write = {
+            "update": {"name": doc_name, "fields": stub_fields},
+        }
+        try:
+            _commit([write], transaction=txn)
+            # Backfill `id` field so _get / list callers see it
+            _patch("adrs", new_id, {"id": new_id}, merge=True)
+            return get_adr(new_id)
+        except RuntimeError as exc:
+            if attempt < _MAX_RESERVE_RETRIES - 1 and "ABORTED" in str(exc):
+                continue  # transaction conflict — retry
+            raise
+    raise RuntimeError("reserve_adr_number: exceeded retry limit on transaction conflicts")
 
 
 # ----- projects_meta (Operations surface — software rows) -----
@@ -596,13 +755,38 @@ def update_projects_meta_if_exists(doc_id, **fields):
     _patch("projects_meta", doc_id, fields, merge=True)
     return True
 
+
+def _touch_meta(project, by, kind, doc_id=None):
+    """Best-effort update of projects_meta to record the last action.
+
+    `doc_id` — the projects_meta document ID (defaults to `project`).
+    Only patches the four last_action_* fields; does not create the row if
+    it doesn't exist (avoids spurious rows for non-Operations features).
+
+    Called from every state-transition function so the Operations overlay
+    always reflects the latest board activity.
+    """
+    if not project:
+        return
+    ts = now()
+    target = doc_id or project
+    try:
+        update_projects_meta_if_exists(target, **{
+            "last_action_at":   ts,
+            "last_action_by":   by or "agent",
+            "last_action_kind": kind,
+            "updated_at":       ts,
+        })
+    except Exception:
+        pass  # Never fail a primary write because of a meta update
+
 def find_projects_meta_by_source_id(source_id):
     """Return the first projects_meta doc whose source_id matches, or None."""
     results = _runquery(_build_query("projects_meta", where=[("source_id", "==", source_id)], limit=1))
     return results[0] if results else None
 
 
-def list_blocked_rollup(director_id):
+def list_blocked_rollup(project):
     """Return every feature that's blocked OR has at least one blocked sub-task.
 
     Bridges the historical "gate sub-task" pattern (feature stays open, one
@@ -612,8 +796,8 @@ def list_blocked_rollup(director_id):
     Returns: [{ "feature": <feature doc>, "blocked_subtasks": [<subtask doc>, ...],
                 "reason": "feature_blocked" | "gate_subtask" }, ...]
     """
-    feats = list_features(director_id)
-    subs_blocked = list_subtasks(director_id=director_id, status="blocked")
+    feats = list_features(project)
+    subs_blocked = list_subtasks(project=project, status="blocked")
     by_feat = {}
     for s in subs_blocked:
         by_feat.setdefault(s.get("feature_id"), []).append(s)

@@ -12,7 +12,7 @@ You read your brief, do the work it describes, commit your output on the branch 
 
 The brief tells you:
 - The Task (`subtask_id`) you own and the Feature (`feature_id`) it belongs to.
-- Your `agent_id` (your identity on the board) and `director_id` (the Director you report to).
+- Your `agent_id` (your identity on the board) and `project` (the Director you report to).
 - The success criterion — concrete and verifiable.
 - The Workspace — worktree path, branch name, repo path.
 - Scope guardrails — what files or lanes are off-limits for this Task.
@@ -42,7 +42,7 @@ Do not re-read files already loaded in this session.
 - `events/{id}` — append-only audit log.
 - `artifacts/{id}` — file refs.
 
-Every record carries `director_id`. **You only operate on records where `director_id` == yours.**
+Every record carries `project`. **You only operate on records where `project` == yours.**
 
 ## Token economy
 
@@ -75,7 +75,7 @@ dcli add-artifact   --subtask-id <SUBTASK_ID> --kind file --path-or-url <path>
 dcli recent-events  --limit 25
 ```
 
-You do **not** run: `add-feature`, `add-subtask`, `edit-feature`, `approve-feature`, `register-agent`, `archive`, `set-hot`. Those are Director-only. If your work implies one of them, surface it in your report — don't run it.
+You do **not** run: `add-feature`, `add-subtask`, `edit-feature`, `approve-adr`, `draft-adr`, `dispatch-executor`, `mark-tested`, `register-agent`, `archive`, `set-hot`. Those are Director-only. If your work implies one of them, surface it in your report — don't run it.
 
 ## Lane discipline
 
@@ -83,7 +83,7 @@ You do **not** run: `add-feature`, `add-subtask`, `edit-feature`, `approve-featu
 2. **No suppress-the-failure patterns.** No `try/except: pass`, no commented-out failing tests, no silenced warnings. Fix the cause or escalate.
 3. **No cross-repo edits.** If your work touches an interface that crosses a repo boundary, escalate.
 4. **No spawning other Heads.** Only Directors spawn Heads.
-5. **No touching other Directors' boards.** `director_id != yours` ⇒ off-limits.
+5. **No touching other Directors' boards.** `project != yours` ⇒ off-limits.
 6. **No re-scoping the work.** If the Task title turns out to be wrong, escalate.
 
 ## Status & blocked handling

@@ -1,6 +1,6 @@
 ---
 name: write-adr
-description: Draft an architecture decision record (ADR) for this repo. Trigger when the user asks for an ADR, decision record, design writeup, or "write up the decision to X". Produces a Proposed-status ADR stored on the board (Firestore).
+description: Draft an architecture decision record (ADR) for this repo. Trigger when the user asks for an ADR, decision record, design writeup, or "write up the decision to X". Produces a Proposed-status ADR stored on the board (Firestore) with proposed subtasks attached.
 ---
 
 # Writing an ADR
@@ -9,26 +9,27 @@ You are the **drafter head**. The workflow has already reserved an ADR number AN
 
 - The user's request
 - The reserved ADR number
-- The reserved ADR id (Firestore document id — you patch this document with the body)
-- The project's director description and a few recent ADR titles for tone
+- The reserved ADR id (Firestore document id — you post to this document via `dcli draft-adr`)
+- The project id (e.g. `dweb`, `dcad`)
+- A few recent ADR titles for tone
 
-**ADRs live in Firestore, not in the git repo.** The board is the source of truth. Do NOT commit ADR files, do NOT create branches, do NOT open PRs. The agent that implements the ADR (`execute-adr`) reads the body from Firestore.
+**ADRs live in Firestore, not in the git repo.** The board is the source of truth. Do NOT commit ADR files, do NOT create branches, do NOT open PRs.
 
 ## Harness pitfalls (READ BEFORE YOU TYPE BASH)
 
 1. **No `\` line continuations.** Single line, `&&`-chained.
-2. **No `"$VAR:something"`.** A double-quoted string containing `$var:` is rejected as "zsh `$name:mod` inside double-quotes." Unquote, or inline the value.
+2. **No `"$VAR:something"`.** A double-quoted string containing `$var:` is rejected. Unquote, or inline the value.
 3. **No writes to `/tmp/`.** Use `.work/` for scratch files (`mkdir -p .work` then write to `.work/...`).
 
 Every Bash invocation is one turn. Chain with `&&` inside ONE call. Parallelize `Read`/`Write`/`Edit` in a single message.
 
 Target: **3 turns**.
 
-## Turn 1 — Write the ADR
+## Turn 1 — Write the ADR body and proposed subtasks
 
-The workflow's prompt already had you Read `drafter_brief.md` and this skill in Turn 0. You have everything you need. Use `Write` to create `.work/adr.md` with the body.
+Use `Write` to create:
 
-Required structure:
+**`.work/adr.md`** — the full ADR body. Required structure:
 
 ```markdown
 # NNNN. <Title in sentence case>
@@ -42,11 +43,11 @@ Required structure:
 
 ## Decision
 
-<What we are doing. One paragraph, then bullets if needed. **Name files, modules, and concrete steps explicitly when you can** — the coder that implements this will decompose Decision + Consequences into 2–4 Tasks, and a vague Decision forces them to guess.>
+<What we are doing. One paragraph, then bullets if needed. **Name files, modules, and concrete steps explicitly** — the implementer decomposes Decision + Consequences into subtasks.>
 
 ## Options considered
 
-<2–4 options with one-line rationale each. The chosen option goes first.>
+<2–4 options with one-line rationale each. Chosen option goes first.>
 
 ## Consequences
 
@@ -55,17 +56,34 @@ Required structure:
 
 Keep it tight. 1–2 pages, not 5.
 
-You may also `Read` a relevant source file in the SAME message as the Write if the decision hinges on it — but no fishing. ADRs are decision documents, not code reviews.
+**`.work/subtasks.json`** — proposed subtasks for the implementation Story. JSON array:
 
-## Turn 2 — Persist to Firestore
+```json
+[
+  {"title": "...", "description": "...", "priority": 2},
+  {"title": "..."}
+]
+```
 
-ONE Bash invocation. Inline the ADR id (from `drafter_brief.md`) and title — no shell vars for the title because it may contain spaces.
+`description` and `priority` are optional. Aim for 2–4 subtasks that decompose the Decision into concrete executable units. These are created with `status=proposed` and `adr_id` linked — they become `open` Tasks when the ADR is approved.
+
+You may also `Read` a relevant source file in the SAME message as the Write if the decision hinges on it — but no fishing.
+
+## Turn 2 — Persist to Firestore via draft-adr
+
+ONE Bash invocation. Inline the ADR id and title from `drafter_brief.md`:
 
 ```
-mkdir -p .work && python .github/scripts/agent_cli.py --director $DIRECTOR_ID update-adr <ADR_ID> --body-file .work/adr.md --title "<Title>" --status proposed
+mkdir -p .work && python C:/Users/randa/source/repos/dIRT/agent_cli.py draft-adr --adr-id <ADR_ID> --body-file .work/adr.md --title "<Title>" --proposed-subtasks .work/subtasks.json
 ```
 
-That single call writes the full Markdown into the ADR document's `body` field, sets the title, and flips the status to `proposed`. The board now shows the ADR.
+This single call:
+- Writes the full Markdown into the ADR document's `body` field
+- Sets the title and flips status to `proposed`
+- Creates each proposed subtask with `adr_id=<ADR_ID>`, `feature_id=null`, `status=proposed`
+- Updates `projects_meta` last_action
+
+The board now shows the ADR with real number + title, and subtasks appear in the Awaiting queue.
 
 ## Turn 3 — Write the result file
 
@@ -77,18 +95,18 @@ That single call writes the full Markdown into the ADR document's `body` field, 
   "adr_id": "<the Firestore id from the brief>",
   "adr_slug": "<short-slug>",
   "adr_title": "<Title>",
-  "decision_summary": "<one sentence>"
+  "decision_summary": "<one sentence>",
+  "proposed_subtasks_count": N
 }
 ```
-
-The post-step uses this to create the implementation Story on the board.
 
 ## Stop conditions
 
 You are **done** when all of these are true:
 
 - `.work/adr.md` exists.
-- The Firestore ADR document has been updated with `body`, `title`, and `status=proposed`.
+- `.work/subtasks.json` exists (may be `[]` if no subtasks make sense).
+- The Firestore ADR document has been updated with `body`, `title`, and `status=proposed` (confirmed by `draft-adr` success).
 - `.work/agent_result.json` exists with the fields above.
 
 Then:
@@ -97,9 +115,9 @@ Then:
 - **Do not** commit any files.
 - **Do not** push anything.
 - **Do not** open a PR.
-- **Do not** call `mark-adr-accepted` — approval is a separate step (the User approves on the board).
+- **Do not** call `approve-adr` — approval is a separate step (the User approves on the board).
 - **Do not** re-read the ADR you just wrote.
 
 ## When you bust the budget
 
-If you're on turn 5+ and still not done, write a stub ADR with what you have and persist it. The worst ADR with a `body` saved beats no ADR at all — the User can request edits and the next iteration is cheap.
+If you're on turn 5+ and still not done, write a stub ADR with what you have, use `[]` for subtasks, and run `draft-adr`. A stub saved beats no ADR — the User can request edits.

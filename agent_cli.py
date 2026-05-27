@@ -1,7 +1,7 @@
 """Firestore-backed agent control CLI.
 
 Run from anywhere inside a project repo containing project.json (CLI walks up to find it),
-or pass --director. All output is JSON to stdout.
+or pass --project. All output is JSON to stdout.
 """
 import argparse, json, sys
 from pathlib import Path
@@ -40,18 +40,15 @@ def _read_project_json():
 
 def _project_id_from_cfg(d):
     """Extract the project/director id from a project.json dict.
-    Accepts both new shape (project_id) and old shape (director_id)."""
-    return d.get("project_id") or d.get("director_id") or d.get("name", "").lower()
+    Accepts both new shape (project_id) and old shape (project)."""
+    return d.get("project_id") or d.get("project") or d.get("name", "").lower()
 
 
-def resolve_director_id(arg_director, arg_project=None):
-    """Resolve the effective director/project id.
+def resolve_project(arg_project=None):
+    """Resolve the effective project id.
 
-    Priority: --director > --project > project.json (project_id then director_id).
-    Both old-shape (director_id) and new-shape (project_id) project.json are accepted.
+    Priority: --project > project.json (project_id field).
     """
-    if arg_director:
-        return arg_director
     if arg_project:
         return arg_project
     d = _read_project_json()
@@ -59,7 +56,7 @@ def resolve_director_id(arg_director, arg_project=None):
         pid = _project_id_from_cfg(d)
         if pid:
             return pid
-    raise SystemExit("No --director and no project.json found in cwd or any parent.")
+    raise SystemExit("No --project and no project.json found in cwd or any parent.")
 
 
 def out(data):
@@ -67,7 +64,7 @@ def out(data):
 
 
 def cmd_info(args):
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     cfg = _read_project_json()
     system_root = bool(cfg.get("system_root")) if cfg else False
 
@@ -87,7 +84,7 @@ def cmd_info(args):
             })
         out({
             "system_root": True,
-            "director_id": did,
+            "project": did,
             "director_name": jones_doc.get("director_name") or "Jones",
             "system_name": jones_doc.get("system_name") or cfg.get("system_name") or "dIRT",
             "owned_projects": projects,
@@ -97,24 +94,24 @@ def cmd_info(args):
         jones_doc = db.get_director("dirt") or {}
         out({
             "system_root": False,
-            "director_id": did,
+            "project": did,
             "project": db.get_director(did),
             "project_json": cfg,
             "jones": {
-                "director_id": "dirt",
+                "project": "dirt",
                 "director_name": jones_doc.get("director_name") or "Jones",
             },
         })
 
 
 def cmd_status(args):
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     out(db.status(did))
 
 
 def cmd_add_feature(args):
     """Create a Story (Firestore collection: features, displayed as 'Story' in the UI)."""
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     author = _current_user()
     fid = db.add_feature(did, args.title, args.description, args.priority,
                          author=author,
@@ -138,10 +135,10 @@ def cmd_add_subtask(args):
             f"Populate it first:\n"
             f"  dcli edit-feature --feature-id {args.feature_id} --test-plan \"<plan>\""
         )
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     author = _current_user()
     sid = db.add_subtask(args.feature_id, args.title, args.description, args.priority,
-                         director_id=did, author=author)
+                         project=did, author=author)
     db.add_event(did, "subtask_created", user=author, subtask_id=sid, feature_id=args.feature_id,
                  payload=json.dumps({"title": args.title, "author": author}))
     out({"subtask_id": sid})
@@ -151,7 +148,7 @@ def cmd_archive(args):
     """Soft-archive a story or task. Use --unarchive to reverse.
 
     Determines kind automatically from which --*-id flag is set."""
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     archived = not args.unarchive
     if args.feature_id:
         db.archive_feature(args.feature_id, archived=archived)
@@ -170,7 +167,7 @@ def cmd_archive(args):
 
 
 def cmd_register_agent(args):
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     if args.role != "head" and args.head_type:
         raise SystemExit("--head-type is only valid with --role head")
     aid = db.register_agent(did, args.role, args.name, args.system_prompt, args.parent_id,
@@ -197,7 +194,7 @@ def cmd_start(args):
 
 
 def cmd_complete(args):
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     db.complete_subtask(args.subtask_id, args.output_ref)
     db.add_event(did, "subtask_completed", user=_current_user(), subtask_id=args.subtask_id,
                  payload=json.dumps({"output_ref": args.output_ref}))
@@ -205,7 +202,7 @@ def cmd_complete(args):
 
 
 def cmd_event(args):
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     eid = db.add_event(did, args.type, user=_current_user(), agent_id=args.agent_id,
                        feature_id=args.feature_id, subtask_id=args.subtask_id,
                        payload=args.payload)
@@ -213,28 +210,28 @@ def cmd_event(args):
 
 
 def cmd_list_features(args):
-    did = resolve_director_id(args.director, getattr(args, "project", None))
-    out(db.list_features(director_id=did, status=args.status, assignee=args.assignee,
+    did = resolve_project(getattr(args, "project", None))
+    out(db.list_features(project=did, status=args.status, assignee=args.assignee,
                          label=args.label, due_before=args.due_before,
                          priority_max=args.priority_max,
                          include_archived=getattr(args, "include_archived", False)))
 
 
 def cmd_list_subtasks(args):
-    did = resolve_director_id(args.director, getattr(args, "project", None))
-    out(db.list_subtasks(feature_id=args.feature_id, director_id=did, status=args.status,
+    did = resolve_project(getattr(args, "project", None))
+    out(db.list_subtasks(feature_id=args.feature_id, project=did, status=args.status,
                          assignee=args.assignee, label=args.label,
                          due_before=args.due_before, priority_max=args.priority_max,
                          include_archived=getattr(args, "include_archived", False)))
 
 
 def cmd_list_agents(args):
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     out(db.list_agents(did))
 
 
 def cmd_recent_events(args):
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     all_projects = getattr(args, "all_projects", False)
     if all_projects:
         # Query events across all owned_projects of directors/dirt.
@@ -263,7 +260,7 @@ def cmd_update_subtask(args):
     if not fields:
         raise SystemExit("update-subtask needs at least --status or --note")
     db.update_subtask(args.subtask_id, **fields)
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     db.add_event(did, "subtask_updated", user=_current_user(), subtask_id=args.subtask_id,
                  payload=json.dumps(fields))
     out({"ok": True})
@@ -313,7 +310,7 @@ def _build_edit_fields(args, doc):
 
 
 def cmd_edit_feature(args):
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     doc = db.get_feature(args.feature_id)
     if not doc:
         raise SystemExit(f"feature {args.feature_id} not found")
@@ -331,7 +328,7 @@ def cmd_edit_feature(args):
 
 
 def cmd_edit_subtask(args):
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     doc = db.get_subtask(args.subtask_id)
     if not doc:
         raise SystemExit(f"subtask {args.subtask_id} not found")
@@ -345,7 +342,7 @@ def cmd_edit_subtask(args):
 
 
 def cmd_delete_feature(args):
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     if not args.yes:
         raise SystemExit("destructive op — pass --yes to confirm")
     doc = db.get_feature(args.feature_id)
@@ -361,7 +358,7 @@ def cmd_delete_feature(args):
 
 
 def cmd_delete_subtask(args):
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     if not args.yes:
         raise SystemExit("destructive op — pass --yes to confirm")
     doc = db.get_subtask(args.subtask_id)
@@ -395,16 +392,16 @@ def cmd_list_projects(args):
 
 def cmd_delete_director(args):
     """Permanently delete a Director document. Refuses if there are any features/subtasks/agents
-    under it unless --cascade is also passed (cascade deletes EVERYTHING under that director_id).
+    under it unless --cascade is also passed (cascade deletes EVERYTHING under that project).
     """
     if not args.yes:
         raise SystemExit("destructive op — pass --yes to confirm")
-    did = args.director_id
+    did = args.project
     doc = db.get_director(did)
     if not doc:
         raise SystemExit(f"director {did} not found")
-    feats = db.list_features(director_id=did, include_archived=True)
-    subs  = db.list_subtasks(director_id=did, include_archived=True)
+    feats = db.list_features(project=did, include_archived=True)
+    subs  = db.list_subtasks(project=did, include_archived=True)
     agents = db.list_agents(did)
     total_children = len(feats) + len(subs) + len(agents)
     if total_children and not args.cascade:
@@ -522,14 +519,14 @@ Then greet the User by name and run the startup ritual. Don't restate the rules 
 
 def cmd_init_director(args):
     """Bootstrap this Director's Firestore record from project.json (idempotent).
-    Accepts both new-shape (project_id) and old-shape (director_id) project.json."""
+    Accepts both new-shape (project_id) and old-shape (project) project.json."""
     cfg_path = _find_project_json()
     if not cfg_path:
         raise SystemExit("project.json not found in cwd or any parent.")
     cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
     did = _project_id_from_cfg(cfg)
     if not did:
-        raise SystemExit("project_id (or director_id) missing in project.json")
+        raise SystemExit("project_id (or project) missing in project.json")
     # repo_path defaults to the directory containing project.json — the project.json
     # now ships with the code, so its location IS the repo root.
     repo_path = cfg.get("repo_path") or str(cfg_path.parent)
@@ -541,7 +538,7 @@ def cmd_init_director(args):
         head_naming_pool=cfg.get("head_naming_pool", []),
         repo_path=repo_path)
     db.add_event(did, "director_initialized", user=_current_user(), payload=json.dumps({"name": cfg.get("name", did)}))
-    out({"ok": True, "director_id": did, "repo_path": repo_path})
+    out({"ok": True, "project": did, "repo_path": repo_path})
 
 
 def cmd_whoami(args):
@@ -598,13 +595,13 @@ def cmd_list_blocked(args):
     """Union of: features with status=blocked AND features whose sub-tasks are blocked.
 
     Bridges the historical gate-sub-task pattern with the new ADR-first feature-level pattern."""
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     out(db.list_blocked_rollup(did))
 
 
 def cmd_add_artifact(args):
     """Record a file, doc, or URL produced by this work as an artifact. Heads call this at done-lifecycle."""
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     aid = db.add_artifact(did, args.kind, args.path_or_url, description=args.description or "",
                           feature_id=args.feature_id, subtask_id=args.subtask_id, agent_id=args.agent_id)
     db.add_event(did, "artifact_added", user=_current_user(),
@@ -616,7 +613,7 @@ def cmd_add_artifact(args):
 
 def cmd_list_stuck(args):
     """Sub-tasks with status=in_progress older than --hours. Catches Heads that died mid-task."""
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     out(db.list_stuck(did, hours=args.hours))
 
 
@@ -648,19 +645,21 @@ def cmd_reserve_adr(args):
     cfg = _read_project_json()
     is_system_root = bool(cfg.get("system_root")) if cfg else False
     arg_project = getattr(args, "project", None)
-    if is_system_root and not arg_project and not args.director:
+    if is_system_root and not arg_project:
         raise SystemExit(
             "ADR 0085: system-level ADRs do not exist. "
             "Use --project <id> to scope this ADR to a project board "
             "(e.g. --project dweb, --project dash)."
         )
 
+    did = resolve_project(arg_project)
     rec = db.reserve_adr_number(
         title=args.title,
         author=args.author or _current_user(),
         description=args.description,
+        project=did,
     )
-    result = {"adr_id": rec["id"], "number": rec["number"], "title": rec["title"], "status": rec["status"]}
+    result = {"adr_id": rec["id"], "number": rec["number"], "title": rec["title"], "status": rec["status"], "project": rec.get("project")}
     out(result)
 
 
@@ -704,6 +703,7 @@ def cmd_update_adr(args):
         v = getattr(args, k, None)
         if v is not None: fields[k] = v
     if args.number is not None: fields["number"] = int(args.number)
+    if getattr(args, "project", None) is not None: fields["project"] = args.project
     if getattr(args, "body_file", None):
         with open(args.body_file, encoding="utf-8") as f:
             fields["body"] = f.read()
@@ -724,7 +724,7 @@ def cmd_delete_adr(args):
 def cmd_mark_adr_accepted(args):
     """Flip an ADR's status to 'accepted' by number, then unblock any Stories
     on this Director's board that referenced it (status: blocked -> open)."""
-    did = resolve_director_id(args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     n = int(args.adr_number)
     matched = [a for a in db.list_adrs(limit=500) if int(a.get("number", -1)) == n]
     if not matched:
@@ -732,7 +732,7 @@ def cmd_mark_adr_accepted(args):
     aid = matched[0]["id"]
     db.update_adr(aid, status="accepted")
     unblocked = 0
-    for f in db.list_features(director_id=did):
+    for f in db.list_features(project=did):
         if f.get("adr_number") == n and f.get("status") == "blocked":
             db.update_feature(f["id"], status="open")
             unblocked += 1
@@ -765,10 +765,9 @@ def cmd_list_messages(args):
 
     The users:<sorted user names> threads are user-to-user; skipped unless
     --include-user-dms is passed (in which case they're still skipped here —
-    they don't involve a director_id and never match this filter).
+    they don't involve a project and never match this filter).
     """
-    # Subparser --director (if supplied) wins over the global flag/project.json default.
-    did = resolve_director_id(getattr(args, "director_sub", None) or args.director, getattr(args, "project", None))
+    did = resolve_project(getattr(args, "project", None))
     # Pull recent messages and filter client-side. At current scale this is fine,
     # and it keeps us out of firestore_db.py per the scope guardrails on this branch.
     rows = db._runquery(db._build_query(
@@ -832,7 +831,7 @@ def cmd_backfill_projects_meta(args):
     Row shape:
       type = 'software'
       source_id = <feature_id>
-      director_id = <from feature doc>
+      project = <from feature doc>
       name = <feature.title>
       stage = <stage arg>
       archived = false
@@ -850,7 +849,7 @@ def cmd_backfill_projects_meta(args):
     row = {
         "type": "software",
         "source_id": args.feature_id,
-        "director_id": feat.get("director_id"),
+        "project": feat.get("project"),
         "name": feat.get("title") or args.feature_id,
         "stage": args.stage,
         "archived": False,
@@ -858,20 +857,65 @@ def cmd_backfill_projects_meta(args):
     }
     db.upsert_projects_meta(doc_id, **row)
     out({"ok": True, "doc_id": doc_id, "stage": args.stage, "name": row["name"],
-         "director_id": row["director_id"], "source_id": args.feature_id})
+         "project": row["project"], "source_id": args.feature_id})
 
 
 # approve-feature deleted by ADR 0085 — ADR approve is the single approval surface.
 
 
+# ----- New ADR-flow commands (ADR-0086 pipeline) -----
+
+def cmd_draft_adr(args):
+    """Drafter procedure: write body + proposed subtasks to Firestore."""
+    import subprocess
+    script = Path(__file__).resolve().parent / "scripts" / "draft_adr.py"
+    cmd = [sys.executable, str(script),
+           "--adr-id", args.adr_id,
+           "--body-file", args.body_file,
+           "--title", args.title]
+    if args.proposed_subtasks:
+        cmd += ["--proposed-subtasks", args.proposed_subtasks]
+    result = subprocess.run(cmd, capture_output=False)
+    sys.exit(result.returncode)
+
+
+def cmd_approve_adr(args):
+    """Approval: create feature, materialize subtasks, mark ADR accepted."""
+    import subprocess
+    script = Path(__file__).resolve().parent / "scripts" / "approve_adr.py"
+    cmd = [sys.executable, str(script),
+           "--adr-id", args.adr_id,
+           "--approver", args.approver]
+    result = subprocess.run(cmd, capture_output=False)
+    sys.exit(result.returncode)
+
+
+def cmd_dispatch_executor(args):
+    """Record implementation branch on feature, emit executor-dispatched event."""
+    import subprocess
+    script = Path(__file__).resolve().parent / "scripts" / "dispatch_executor.py"
+    cmd = [sys.executable, str(script),
+           "--feature-id", args.feature_id,
+           "--branch", args.branch]
+    result = subprocess.run(cmd, capture_output=False)
+    sys.exit(result.returncode)
+
+
+def cmd_mark_tested(args):
+    """Mark a Story done after Jones confirms tests pass."""
+    import subprocess
+    script = Path(__file__).resolve().parent / "scripts" / "mark_tested.py"
+    cmd = [sys.executable, str(script),
+           "--feature-id", args.feature_id]
+    result = subprocess.run(cmd, capture_output=False)
+    sys.exit(result.returncode)
+
 
 def main():
     p = argparse.ArgumentParser(description="Firestore-backed agent control CLI")
-    p.add_argument("--director", default=None,
-                   help="director_id (takes precedence over --project and project.json)")
     p.add_argument("--project", default=None,
                    help="project_id override — scopes board commands to the named project without "
-                        "changing cwd. Overridden by --director if both are given.")
+                        "changing cwd. Falls back to project.json in cwd or any parent.")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("kickoff", help="Print the canonical Director startup message (with resolved doctrine paths). Run as the first command in a fresh Claude Code session.").set_defaults(func=cmd_kickoff)
@@ -880,8 +924,8 @@ def main():
     sub.add_parser("list-projects", help="List all project records under Jones (runtime='dirt', excluding dirt itself). Returns project_id, name, repo_path, github_remote, commit_signature.").set_defaults(func=cmd_list_projects)
 
     sp = sub.add_parser("delete-director", help="Permanently delete a Director and (with --cascade) its stories/tasks/agents.")
-    sp.add_argument("--director-id", dest="director_id", required=True)
-    sp.add_argument("--cascade", action="store_true", help="also delete every story, task, agent under this director_id")
+    sp.add_argument("--project", required=True)
+    sp.add_argument("--cascade", action="store_true", help="also delete every story, task, agent under this project")
     sp.add_argument("--yes", action="store_true", help="required to confirm destructive op")
     sp.set_defaults(func=cmd_delete_director)
     sub.add_parser("whoami", help="Print current User's identity from user.json").set_defaults(func=cmd_whoami)
@@ -951,6 +995,9 @@ def main():
     sp.add_argument("--body",
                     help="Inline Markdown body for this ADR. Stored as the `body` field in Firestore "
                          "(used by dASH for in-app rendering). Overrides --body-file if both are given.")
+    sp.add_argument("--project",
+                    help="Set or correct the project field (e.g. 'dweb', 'dcad'). "
+                         "Required for dASH board filtering.")
     sp.set_defaults(func=cmd_update_adr)
 
     sp = sub.add_parser("delete-adr", help="Hard-delete an ADR record.")
@@ -964,16 +1011,12 @@ def main():
 
     sp = sub.add_parser("list-messages",
         help="Messages addressed to this Director (user_director DMs + director-to-director chats).")
-    # Accept --director on the subparser as well as globally — doctrine writes
-    # `dcli list-messages --director <my_id>`, so honor that placement.
-    sp.add_argument("--director", default=None, dest="director_sub",
-                    help="director_id (overrides global --director / project.json).")
     sp.add_argument("--limit", type=int, default=25,
                     help="Max messages to return (default 25).")
     sp.add_argument("--unread-only", action="store_true", dest="unread_only",
-                    help="Skip messages whose read_by[] already contains this director_id.")
+                    help="Skip messages whose read_by[] already contains this project.")
     sp.add_argument("--include-user-dms", action="store_true", dest="include_user_dms",
-                    help="(Reserved) include users:<a>-<b> threads. These don't involve a director_id, so they're skipped either way today; flag is here for future expansion.")
+                    help="(Reserved) include users:<a>-<b> threads. These don't involve a project, so they're skipped either way today; flag is here for future expansion.")
     sp.set_defaults(func=cmd_list_messages)
 
     # approve-feature removed by ADR 0085 — ADR approve is the single approval surface.
@@ -991,6 +1034,41 @@ def main():
     sp.add_argument("--stage", required=True,
                     help=f"One of: {', '.join(_PROJECTS_META_STAGES)}")
     sp.set_defaults(func=cmd_backfill_projects_meta)
+
+    # ----- ADR-flow pipeline subcommands -----
+    sp = sub.add_parser("draft-adr",
+        help="Drafter procedure: write ADR body + proposed subtasks to Firestore.")
+    sp.add_argument("--adr-id", dest="adr_id", required=True,
+                    help="Firestore doc ID of the reserved ADR stub.")
+    sp.add_argument("--body-file", dest="body_file", required=True,
+                    help="Path to a Markdown file containing the full ADR body.")
+    sp.add_argument("--title", required=True,
+                    help="Human-readable ADR title.")
+    sp.add_argument("--proposed-subtasks", dest="proposed_subtasks", default=None,
+                    help="Path to a JSON file with proposed subtasks [{title, description?, priority?}].")
+    sp.set_defaults(func=cmd_draft_adr)
+
+    sp = sub.add_parser("approve-adr",
+        help="Approve an ADR: create feature, materialize subtasks, mark ADR accepted (atomic).")
+    sp.add_argument("--adr-id", dest="adr_id", required=True,
+                    help="Firestore doc ID of the ADR to approve.")
+    sp.add_argument("--approver", required=True,
+                    help="Name of the approver.")
+    sp.set_defaults(func=cmd_approve_adr)
+
+    sp = sub.add_parser("dispatch-executor",
+        help="Record implementation branch on a feature and emit executor-dispatched event.")
+    sp.add_argument("--feature-id", dest="feature_id", required=True,
+                    help="Firestore feature (Story) doc ID.")
+    sp.add_argument("--branch", required=True,
+                    help="Implementation branch name.")
+    sp.set_defaults(func=cmd_dispatch_executor)
+
+    sp = sub.add_parser("mark-tested",
+        help="Mark a Story done after Jones confirms tests pass.")
+    sp.add_argument("--feature-id", dest="feature_id", required=True,
+                    help="Firestore feature (Story) doc ID.")
+    sp.set_defaults(func=cmd_mark_tested)
 
     sub.add_parser("info").set_defaults(func=cmd_info)
     sub.add_parser("status").set_defaults(func=cmd_status)
