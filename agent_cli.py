@@ -640,29 +640,27 @@ def cmd_add_adr(args):
 def cmd_reserve_adr(args):
     """Allocate the next ADR number by creating a draft stub. Hand the number to a Drafter.
 
-    If --feature-id is given and a projects_meta row already exists for that feature,
-    patch its stage to 'adr-drafting'. If no projects_meta row exists yet, this is a
-    no-op (the on_feature_created trigger in dASH creates that row — don't create it here).
+    ADR 0085: system-level ADRs do not exist. If invoked at dIRT root
+    (system_root: true) without --project, refuse. Every ADR must belong
+    to a project board.
     """
+    # ADR 0085 guard: no system-level ADRs
+    cfg = _read_project_json()
+    is_system_root = bool(cfg.get("system_root")) if cfg else False
+    arg_project = getattr(args, "project", None)
+    if is_system_root and not arg_project and not args.director:
+        raise SystemExit(
+            "ADR 0085: system-level ADRs do not exist. "
+            "Use --project <id> to scope this ADR to a project board "
+            "(e.g. --project dweb, --project dash)."
+        )
+
     rec = db.reserve_adr_number(
         title=args.title,
         author=args.author or _current_user(),
         description=args.description,
     )
     result = {"adr_id": rec["id"], "number": rec["number"], "title": rec["title"], "status": rec["status"]}
-
-    feature_id = getattr(args, "feature_id", None)
-    if feature_id:
-        # Doc ID convention matches dASH triggers: projects_meta/<feature_id>.
-        patched = db.update_projects_meta_if_exists(feature_id, stage="adr-drafting")
-        if not patched:
-            # Fallback: query by source_id in case the doc was created with a different ID.
-            existing = db.find_projects_meta_by_source_id(feature_id)
-            if existing:
-                patched = db.update_projects_meta_if_exists(existing["id"], stage="adr-drafting")
-        result["projects_meta_patched"] = patched
-        result["feature_id"] = feature_id
-
     out(result)
 
 
@@ -863,18 +861,7 @@ def cmd_backfill_projects_meta(args):
          "director_id": row["director_id"], "source_id": args.feature_id})
 
 
-def cmd_approve_feature(args):
-    """Unblock a feature whose ADR has been approved by the User. Sets status->open and emits a feature_approved event."""
-    did = resolve_director_id(args.director, getattr(args, "project", None))
-    doc = db.get_feature(args.feature_id)
-    if not doc:
-        raise SystemExit(f"feature {args.feature_id} not found")
-    if doc.get("status") != "blocked":
-        raise SystemExit(f"feature {args.feature_id} is not blocked (status={doc.get('status')})")
-    db.update_feature(args.feature_id, status="open")
-    db.add_event(did, "feature_approved", user=_current_user(), feature_id=args.feature_id,
-                 payload=json.dumps({"title": doc.get("title"), "adr_url": doc.get("adr_url"), "approved_by": _current_user()}))
-    out({"ok": True, "feature_id": args.feature_id})
+# approve-feature deleted by ADR 0085 — ADR approve is the single approval surface.
 
 
 
@@ -989,9 +976,7 @@ def main():
                     help="(Reserved) include users:<a>-<b> threads. These don't involve a director_id, so they're skipped either way today; flag is here for future expansion.")
     sp.set_defaults(func=cmd_list_messages)
 
-    sp = sub.add_parser("approve-feature", help="Mark a blocked feature's ADR as approved; unblocks the feature.")
-    sp.add_argument("--feature-id", required=True)
-    sp.set_defaults(func=cmd_approve_feature)
+    # approve-feature removed by ADR 0085 — ADR approve is the single approval surface.
 
     sp = sub.add_parser(
         "backfill-projects-meta",
