@@ -2,7 +2,7 @@
 
 Randall's personal Director runtime. A spin-off of `director-pattern` (the dAPP Controls company general Director, still at `C:\Users\randa\source\repos\director-pattern`).
 
-Director: **Jones** (`director_id: dirt`), Steve Jobs persona: exact, diligent, craftsman, unrelenting. Defined in `project.json`.
+Director: **Jones** (`project_id: dirt`), Steve Jobs persona: exact, diligent, craftsman, unrelenting. Defined in `project.json`.
 
 Pushes to Randall's **personal GitHub**.
 
@@ -16,21 +16,19 @@ Python 3.12+, standard library + `google-auth` + `requests`.
 
 | Path | What |
 |---|---|
-| `agent_cli.py`, `firestore_db.py` | The dCLI and Firestore client (real impl in `.github/scripts/`; root copies are mirrors) |
+| `agent_cli.py`, `firestore_db.py` | The dCLI and Firestore client — canonical implementations at repo root |
 | `dcli`, `dcli.cmd` | Shell shims for `agent_cli.py` |
 | `agents/director.md` | Director system prompt (doctrine) |
 | `agents/head.md` | Head system prompt (doctrine) |
-| `.github/workflows/director-agent.yml` | Director Agent GitHub workflow |
-| `.github/scripts/` | Workflow scripts: `fetch_context.py`, `prepare_drafter_brief.py`, `post_drafter_steps.py`, `post_reply.py`, `deploy_workflow.sh` |
 | `.claude/skills/` | `write-adr/`, `execute-adr/` — the procedures Heads load when drafting or implementing |
-| `docs/decisions/` | ADRs for dIRT itself (system-level decisions only — e.g. 0037 auto-dispatch) |
-| `scripts/` | Maintenance: `dashboard_analytics.py`, `migrate_director_id.py`, `purge_dcad_plan.py` |
+| `docs/decisions/` | ADRs for dIRT itself (system-level decisions only) |
+| `scripts/` | ADR-flow scripts (`draft_adr.py`, `approve_adr.py`, `dispatch_executor.py`, `mark_tested.py`) and maintenance utilities |
 | `backup_firestore.py` | Nightly Firestore snapshot script |
 | `KICKOFF.md`, `GCP_SETUP.md` | Startup + Firebase service-account setup |
 
 ## What's NOT here
 
-The dAPP Controls dashboard product — `web/`, dashboard ADRs (0001, 0003, 0004), the Cloud Functions that wake Directors on Firestore events — lives in **`C:\Users\randa\source\repos\dASH`** and pushes to `dapp-controls/dASH`. ADR 0037 in `docs/decisions/` still describes the auto-dispatch design, but the implementation file paths it references (`functions/main.py`) now resolve inside the dASH repo.
+The dAPP Controls dashboard product — `web/`, dashboard ADRs (0001, 0003, 0004), Cloud Functions — lives in **`C:\Users\randa\source\repos\dASH`** and pushes to `dapp-controls/dASH`.
 
 ## Run
 
@@ -56,7 +54,7 @@ dcli kickoff
    │  dASH (separate repo)      │                              │  Director Cowork chats          │
    │  dapp-controls/dASH        │                              │  (one per Director repo)        │
    │  - Firebase Hosting        │                              │   - dIRT (this repo, personal)  │
-   │  - Cloud Functions         │                              │   - director-pattern (company)  │
+   │  - Cloud Functions (dASH)  │                              │   - director-pattern (company)  │
    │  - direct-to-Firestore JS  │                              │   - dCAD, dERP, dPART, dWEB…    │
    └────────────────────────────┘                              └─────────────┬───────────────────┘
                                                                              │

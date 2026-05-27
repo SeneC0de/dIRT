@@ -23,7 +23,7 @@ python C:/Users/randa/source/repos/dIRT/agent_cli.py <command> ...
 python C:/Users/randa/source/repos/dIRT/agent_cli.py get-adr <N>
 ```
 
-`get-adr` accepts an integer ADR number directly. From the returned JSON, capture: `number`, `title`, `status`, `director_id`, `body`.
+`get-adr` accepts an integer ADR number directly. From the returned JSON, capture: `number`, `title`, `status`, `project`, `body`.
 
 - If `body` is empty, stop and tell the user — there is nothing to implement.
 - If `status` is not `accepted`, ask the user whether to proceed anyway. Don't silently implement a draft or proposed ADR.
@@ -32,7 +32,7 @@ Derive a kebab-case slug from the title (e.g. `fix-receipts-400`).
 
 ## Step 2 — Resolve the target repo
 
-If `director_id == "dirt"`, the target is the dIRT repo itself: `C:/Users/randa/source/repos/dIRT`.
+If `project == "dirt"`, the target is the dIRT repo itself: `C:/Users/randa/source/repos/dIRT`.
 
 Otherwise:
 
@@ -40,7 +40,7 @@ Otherwise:
 python C:/Users/randa/source/repos/dIRT/agent_cli.py list-projects
 ```
 
-Find the entry whose `project_id == director_id`. Use its `repo_path`. Every subsequent command runs **inside that repo** — either `cd` once per Bash call, or use absolute paths.
+Find the entry whose `project_id == project`. Use its `repo_path`. Every subsequent command runs **inside that repo** — either `cd` once per Bash call, or use absolute paths.
 
 ## Step 3 — Prep the implementation branch
 
@@ -88,7 +88,22 @@ git push -u origin impl/adr-<NNNN>-<slug>
 
 Use **explicit file paths** in `git add` — not `-A` or `.`. The user maintains uncommitted scratch work in other paths; sweep-everything stages bring it along.
 
-## Step 8 — Report
+## Step 8 — Dispatch executor marker
+
+After pushing, signal Jones that the branch is ready:
+
+```
+python C:/Users/randa/source/repos/dIRT/agent_cli.py dispatch-executor --feature-id <feature_id> --branch impl/adr-<NNNN>-<slug>
+```
+
+`feature_id` comes from the ADR doc's `feature_id` field (set during approval). This call:
+- Sets `feature.status = needs-testing` and records the branch on the feature.
+- Emits a `note` event: `"execute-adr branch ready: impl/adr-NNNN-<slug>"`.
+- Updates `projects_meta` last_action_kind = `executor_dispatched`.
+
+If `feature_id` is missing (ADR not yet approved), skip this step and note it in the report.
+
+## Step 9 — Report
 
 Tell the user, in 2–3 sentences:
 
@@ -96,7 +111,7 @@ Tell the user, in 2–3 sentences:
 - A one-line summary of what changed.
 - Anything that needed a judgment call, plus any scope you deliberately deferred.
 
-Then stop.
+Then stop. Jones will run `dcli mark-tested --feature-id <id>` when Randall confirms tests pass.
 
 ## Out of scope for this skill
 
