@@ -297,6 +297,9 @@ def list_features(project=None, status=None, assignee=None, label=None,
     feats = _runquery(_build_query("features", where=where or None))
     if not include_archived:
         feats = [f for f in feats if not f.get("archived")]
+    for f in feats:
+        f.pop("description", None)
+        f.pop("test_plan", None)
     return feats
 
 def update_feature(feature_id, **fields):
@@ -384,6 +387,8 @@ def list_subtasks(feature_id=None, project=None, status=None,
     subs = _runquery(_build_query("subtasks", where=where or None))
     if not include_archived:
         subs = [s for s in subs if not s.get("archived")]
+    for s in subs:
+        s.pop("description", None)
     return subs
 
 def claim_subtask(subtask_id, agent_id):
@@ -486,6 +491,9 @@ def archive_feature(feature_id, archived=True):
 
 def archive_subtask(subtask_id, archived=True):
     _patch("subtasks", subtask_id, {"archived": archived, "updated_at": now()}, merge=True)
+
+def archive_adr(adr_id, archived=True):
+    _patch("adrs", adr_id, {"archived": archived, "updated_at": now()}, merge=True)
 
 
 # ----- blocked-by hierarchical label rendering -----
@@ -629,19 +637,47 @@ def add_adr(number, title, url=None, status="draft", author=None,
     return aid
 
 def get_adr(adr_id):
-    return _get("adrs", adr_id)
+    """Fetch ADR metadata. Body is excluded — use get_adr_body() for the markdown text."""
+    doc = _get("adrs", adr_id)
+    if doc:
+        doc.pop("body", None)
+    return doc
+
+def get_adr_body(adr_id):
+    """Return just the body markdown string for an ADR, or None if not found / no body."""
+    doc = _get("adrs", adr_id)
+    return doc.get("body") if doc else None
 
 def get_adr_by_number(n):
-    """Fetch a single ADR by its integer `number` field."""
+    """Fetch ADR metadata by its integer `number` field. Body excluded."""
     results = _runquery(_build_query("adrs", where=[("number", "==", int(n))], limit=1))
-    return results[0] if results else None
+    if not results:
+        return None
+    results[0].pop("body", None)
+    return results[0]
 
 def list_adrs(status=None, limit=200):
+    """List ADR metadata records. Body field excluded from all results."""
     where = []
     if status: where.append(("status", "==", status))
-    return _runquery(_build_query("adrs", where=where or None,
-                                  order_by=[("number", "DESCENDING")],
-                                  limit=limit))
+    results = _runquery(_build_query("adrs", where=where or None,
+                                     order_by=[("number", "DESCENDING")],
+                                     limit=limit))
+    for r in results:
+        r.pop("body", None)
+    return results
+
+def list_active_adrs(project=None):
+    """ADRs in draft or proposed status only. Body excluded — use get_adr_body() for text."""
+    where = []
+    if project:
+        where.append(("project", "==", project))
+    all_adrs = _runquery(_build_query("adrs", where=where or None,
+                                      order_by=[("number", "DESCENDING")]))
+    active = [a for a in all_adrs if a.get("status") in ("draft", "proposed")]
+    for a in active:
+        a.pop("body", None)
+    return active
 
 def update_adr(adr_id, **fields):
     if "status" in fields and fields["status"] not in ADR_STATUSES:

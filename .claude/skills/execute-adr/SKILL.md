@@ -19,13 +19,16 @@ python C:/Users/randa/source/repos/dIRT/agent_cli.py <command> ...
 
 ## Step 1 — Resolve the ADR
 
+Run both commands in parallel:
+
 ```
 python C:/Users/randa/source/repos/dIRT/agent_cli.py get-adr <N>
+python C:/Users/randa/source/repos/dIRT/agent_cli.py get-adr-body <N>
 ```
 
-`get-adr` accepts an integer ADR number directly. From the returned JSON, capture: `number`, `title`, `status`, `project`, `body`.
+`get-adr` returns metadata: `number`, `title`, `status`, `project`, `feature_id`. `get-adr-body` returns the full markdown text in the `body` field.
 
-- If `body` is empty, stop and tell the user — there is nothing to implement.
+- If `body` is null or empty, stop and tell the user — there is nothing to implement.
 - If `status` is not `accepted`, ask the user whether to proceed anyway. Don't silently implement a draft or proposed ADR.
 
 Derive a kebab-case slug from the title (e.g. `fix-receipts-400`).
@@ -58,7 +61,7 @@ git symbolic-ref refs/remotes/origin/HEAD
 
 ## Step 4 — Read the ADR + scope the change
 
-The ADR `body` is already in the JSON from Step 1 — no scratch file needed. In a single message, fire parallel `Glob` / `Grep` / `Read` calls against the files the ADR names or implies. The goal is a clear picture of every site that needs to change before you touch any of them.
+The ADR body is in the `body` field from the `get-adr-body` call in Step 1 — no scratch file needed. In a single message, fire parallel `Glob` / `Grep` / `Read` calls against the files the ADR names or implies. The goal is a clear picture of every site that needs to change before you touch any of them.
 
 ## Step 5 — Implement
 

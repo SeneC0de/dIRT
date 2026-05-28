@@ -145,7 +145,7 @@ def cmd_add_subtask(args):
 
 
 def cmd_archive(args):
-    """Soft-archive a story or task. Use --unarchive to reverse.
+    """Soft-archive a story, task, or ADR. Use --unarchive to reverse.
 
     Determines kind automatically from which --*-id flag is set."""
     did = resolve_project(getattr(args, "project", None))
@@ -162,8 +162,15 @@ def cmd_archive(args):
                      user=_current_user(), subtask_id=args.subtask_id,
                      payload=json.dumps({"subtask_id": args.subtask_id}))
         out({"ok": True, "subtask_id": args.subtask_id, "archived": archived})
+    elif args.adr_id:
+        adr_id = _resolve_adr_arg(args.adr_id)
+        db.archive_adr(adr_id, archived=archived)
+        db.add_event(did, "adr_archived" if archived else "adr_unarchived",
+                     user=_current_user(),
+                     payload=json.dumps({"adr_id": adr_id}))
+        out({"ok": True, "adr_id": adr_id, "archived": archived})
     else:
-        raise SystemExit("must specify one of --feature-id / --subtask-id")
+        raise SystemExit("must specify one of --feature-id / --subtask-id / --adr-id")
 
 
 def cmd_register_agent(args):
@@ -209,20 +216,39 @@ def cmd_event(args):
     out({"event_id": eid})
 
 
-def cmd_list_features(args):
-    did = resolve_project(getattr(args, "project", None))
-    out(db.list_features(project=did, status=args.status, assignee=args.assignee,
-                         label=args.label, due_before=args.due_before,
-                         priority_max=args.priority_max,
-                         include_archived=getattr(args, "include_archived", False)))
+def cmd_get_story(args):
+    """Fetch a single Story (full record including description and test_plan) by ID."""
+    doc = db.get_feature(args.story_id)
+    if not doc:
+        sys.exit(f"Story {args.story_id} not found")
+    out(doc)
 
 
-def cmd_list_subtasks(args):
+def cmd_list_active_stories(args):
+    """Stories that are not done, cancelled, or archived. Description/test_plan excluded.
+    Use get-story <id> for full detail."""
     did = resolve_project(getattr(args, "project", None))
-    out(db.list_subtasks(feature_id=args.feature_id, project=did, status=args.status,
-                         assignee=args.assignee, label=args.label,
-                         due_before=args.due_before, priority_max=args.priority_max,
-                         include_archived=getattr(args, "include_archived", False)))
+    _inactive = {"done", "cancelled"}
+    feats = db.list_features(project=did)
+    out([f for f in feats if f.get("status") not in _inactive])
+
+
+def cmd_get_task(args):
+    """Fetch a single Task (full record including description) by ID."""
+    doc = db.get_subtask(args.task_id)
+    if not doc:
+        sys.exit(f"Task {args.task_id} not found")
+    out(doc)
+
+
+def cmd_list_active_tasks(args):
+    """Tasks that are not done or cancelled. Description excluded.
+    Use get-task <id> for full detail."""
+    did = resolve_project(getattr(args, "project", None))
+    story_id = getattr(args, "story_id", None)
+    _inactive = {"done", "cancelled"}
+    tasks = db.list_subtasks(feature_id=story_id, project=did)
+    out([t for t in tasks if t.get("status") not in _inactive])
 
 
 def cmd_list_agents(args):
@@ -668,8 +694,19 @@ def cmd_next_adr_number(args):
     out({"next": db.next_adr_number()})
 
 
-def cmd_list_adrs(args):
-    out(db.list_adrs(status=args.status, limit=args.limit))
+def cmd_list_active_adrs(args):
+    """ADRs in draft or proposed status only. Body excluded — use get-adr-body for text."""
+    project = getattr(args, "project", None)
+    out(db.list_active_adrs(project=project))
+
+
+def cmd_get_adr_body(args):
+    """Return the full markdown body of an ADR."""
+    adr_id = _resolve_adr_arg(args.adr_id)
+    body = db.get_adr_body(adr_id)
+    if body is None:
+        sys.exit(f"ADR {args.adr_id} not found or has no body yet")
+    out({"adr_id": adr_id, "body": body})
 
 
 def _resolve_adr_arg(adr_arg):
@@ -726,10 +763,10 @@ def cmd_mark_adr_accepted(args):
     on this Director's board that referenced it (status: blocked -> open)."""
     did = resolve_project(getattr(args, "project", None))
     n = int(args.adr_number)
-    matched = [a for a in db.list_adrs(limit=500) if int(a.get("number", -1)) == n]
-    if not matched:
+    rec = db.get_adr_by_number(n)
+    if not rec:
         sys.exit(f"no ADR with number {n}")
-    aid = matched[0]["id"]
+    aid = rec["id"]
     db.update_adr(aid, status="accepted")
     unblocked = 0
     for f in db.list_features(project=did):
@@ -971,14 +1008,20 @@ def main():
         help="Show the next ADR number without reserving it. Read-only.")
     sp.set_defaults(func=cmd_next_adr_number)
 
-    sp = sub.add_parser("list-adrs", help="List ADR records.")
-    sp.add_argument("--status", choices=list(db.ADR_STATUSES))
-    sp.add_argument("--limit", type=int, default=200)
-    sp.set_defaults(func=cmd_list_adrs)
+    sp = sub.add_parser("list-active-adrs",
+        help="ADRs in draft or proposed status. Body excluded — use get-adr-body for text.")
+    sp.add_argument("--project", default=None,
+                    help="Filter to a specific project. Omit to see all active ADRs.")
+    sp.set_defaults(func=cmd_list_active_adrs)
 
-    sp = sub.add_parser("get-adr", help="Fetch a single ADR by id.")
+    sp = sub.add_parser("get-adr", help="Fetch a single ADR's metadata by id or number. Body excluded.")
     sp.add_argument("adr_id")
     sp.set_defaults(func=cmd_get_adr)
+
+    sp = sub.add_parser("get-adr-body",
+        help="Return the full markdown body of an ADR (by id or number).")
+    sp.add_argument("adr_id", help="ADR doc ID or integer number.")
+    sp.set_defaults(func=cmd_get_adr_body)
 
     sp = sub.add_parser("update-adr", help="Patch fields on an existing ADR.")
     sp.add_argument("adr_id")
@@ -1085,9 +1128,11 @@ def main():
                         help="Test plan for this Story (required before tasks can be added).")
         sp.set_defaults(func=cmd_add_feature)
 
-    sp = sub.add_parser("archive", help="Soft-archive a Story (feature) or Task (subtask). Reversible.")
+    sp = sub.add_parser("archive", help="Soft-archive a Story, Task, or ADR. Reversible.")
     sp.add_argument("--feature-id", dest="feature_id", default=None)
     sp.add_argument("--subtask-id", dest="subtask_id", default=None)
+    sp.add_argument("--adr-id", dest="adr_id", default=None,
+                    help="ADR doc ID or number to archive.")
     sp.add_argument("--unarchive", action="store_true", help="restore from archived")
     sp.set_defaults(func=cmd_archive)
 
@@ -1184,28 +1229,27 @@ def main():
     sp.set_defaults(func=cmd_delete_subtask)
 
 
-    # list-features (alias: list-stories) — Stories in the UI
-    for cmd_name in ("list-features", "list-stories"):
-        sp = sub.add_parser(cmd_name, help="List Stories under this Director.")
-        sp.add_argument("--status", default=None)
-        sp.add_argument("--assignee", default=None)
-        sp.add_argument("--label", default=None)
-        sp.add_argument("--due-before", default=None, help="ISO date YYYY-MM-DD")
-        sp.add_argument("--priority-max", default=None, help="Stories at this priority or higher (lower number = higher priority)")
-        sp.add_argument("--include-archived", action="store_true", help="include soft-archived Stories")
-        sp.set_defaults(func=cmd_list_features)
+    # Story queries
+    sp = sub.add_parser("get-story",
+        help="Fetch a single Story (full record: description, test_plan, etc.) by Firestore ID.")
+    sp.add_argument("story_id", help="Firestore document ID of the Story.")
+    sp.set_defaults(func=cmd_get_story)
 
-    # list-subtasks (alias: list-tasks) — Tasks in the UI
-    for cmd_name in ("list-subtasks", "list-tasks"):
-        sp = sub.add_parser(cmd_name, help="List Tasks under this Director.")
-        sp.add_argument("--feature-id", default=None, dest="feature_id", help="parent Story ID")
-        sp.add_argument("--status", default=None)
-        sp.add_argument("--assignee", default=None)
-        sp.add_argument("--label", default=None)
-        sp.add_argument("--due-before", default=None, help="ISO date YYYY-MM-DD")
-        sp.add_argument("--priority-max", default=None)
-        sp.add_argument("--include-archived", action="store_true", help="include soft-archived Tasks")
-        sp.set_defaults(func=cmd_list_subtasks)
+    sp = sub.add_parser("list-active-stories",
+        help="Stories not yet done or cancelled. Description/test_plan excluded — use get-story <id> for full detail.")
+    sp.set_defaults(func=cmd_list_active_stories)
+
+    # Task queries
+    sp = sub.add_parser("get-task",
+        help="Fetch a single Task (full record including description) by Firestore ID.")
+    sp.add_argument("task_id", help="Firestore document ID of the Task.")
+    sp.set_defaults(func=cmd_get_task)
+
+    sp = sub.add_parser("list-active-tasks",
+        help="Tasks not yet done or cancelled. Description excluded — use get-task <id> for full detail.")
+    sp.add_argument("--story-id", dest="story_id", default=None,
+                    help="Limit to tasks under this Story (Firestore feature doc ID).")
+    sp.set_defaults(func=cmd_list_active_tasks)
 
     sub.add_parser("list-agents").set_defaults(func=cmd_list_agents)
 
