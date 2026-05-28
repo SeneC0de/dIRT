@@ -1,0 +1,544 @@
+# Vitalis Refrigeration Rack Control Panel — v3 (selection-driven invariants).
+#
+# v3 vs v2:
+#   - DROPPED `evidence` from invariants (noise; archival data stays in
+#     panel-template.yaml v0.1 and prior-analyses/).
+#   - DROPPED placeholder `bom_lines` with fake part numbers
+#     (ABB-XT-FRAME, MCB-2A-DIN, etc.).
+#   - ADDED `selection_lines` carrying the criteria dCAD passes to dERP
+#     `POST /api/parts/select` at build time. Part identity is RESOLVED
+#     by dERP's matcher, not authored here.
+#   - ADDED `quantity_formula` with {slot} substitutions; resolved by
+#     dCAD's formula evaluator before the POST. Static numbers are still
+#     allowed for fixed quantities.
+#   - SPLIT the file into `panel_defaults`, `invariants` (part-producing),
+#     and `panel_documentation` (workflow/schema descriptors, no parts).
+#
+# Slot ID references used in formulas + criteria (resolved by dCAD at build):
+#   {mt_compressor_count}, {lt_compressor_count}
+#   {compressor_count}                   = {mt} + {lt}  (derived)
+#   {incoming_voltage}                   enum
+#   {door_pilot_family}                  enum
+#   {branch_breaker_family}              enum (derived from {incoming_voltage})
+#   {motor_protection_branch_topology}   enum (weg_package | abb_package)
+#   {enclosure_size}                     enum
+#   {mocp_amps}                          decimal (from Load Calc)
+#   {control_voltage_120vac}             constant 120 unless overridden
+#   {panel_sccr_kaic}                    panel_defaults.sccr_kaic
+#   {rfq_panel_options.*}                booleans
+
+schema_version: 3
+template_id: roxsta-v1
+template_name: "Vitalis Roxsta Control Panel"
+
+# ---------------------------------------------------------------------------
+# Panel-level defaults injected into criteria by the resolver.
+# ---------------------------------------------------------------------------
+panel_defaults:
+  sccr_kaic: 65          # used by UL489 breaker criteria (main + MMP)
+  control_voltage_120vac: 120
+  control_voltage_24vac: 24
+  control_voltage_24vdc: 24
+
+
+# ===========================================================================
+# INVARIANTS — produce BOM lines via selection criteria at build time.
+# ===========================================================================
+invariants:
+
+  # ---- Enclosure family --------------------------------------------------
+  - invariant_id: enclosure
+    description: >
+      Single floor-stand NEMA 3R enclosure, ~18 in depth, sized per
+      enclosure_size slot. Saginaw FSD family is default; Rittal is customer-
+      specified outlier. Back subpanel always ships; side subpanel only when
+      enclosure_size demands it.
+    selection_lines:
+      - role: main enclosure
+        category: Enclosure
+        quantity_formula: "1"
+        criteria:
+          family: "{enclosure_size.family}"     # saginaw_sce_fsd | rittal
+          dimensions: "{enclosure_size.dimensions}"
+          nema_rating: "3R"
+          style: "floor_stand_disconnect"
+      - role: back subpanel
+        category: Subpanel
+        quantity_formula: "1"
+        criteria:
+          family: "{enclosure_size.family}"
+          dimensions: "{enclosure_size.subpanel_dimensions}"
+          mount: "back"
+      - role: side subpanel
+        category: Subpanel
+        quantity_formula: "{enclosure_size.requires_side_subpanel ? 1 : 0}"
+        criteria:
+          family: "{enclosure_size.family}"
+          dimensions: "{enclosure_size.side_subpanel_dimensions}"
+          mount: "side"
+
+  # ---- Main disconnect (UL489) -------------------------------------------
+  - invariant_id: main_disconnect
+    description: >
+      ABB Tmax XT main breaker (UL489), 3-pole, sized to MOCP. Paired with
+      Cu/Al lug kit matched to wire ampacity and a door-mounted rotary
+      handle with interlock/padlock. Three line items per disconnect.
+    selection_lines:
+      - role: main breaker frame
+        category: Breaker
+        quantity_formula: "1"
+        criteria:
+          amp_rating: "{mocp_amps}"
+          poles: 3
+          voltage_rating: "{incoming_voltage.line_to_line}"
+          kaic_rating: "{panel_sccr_kaic}"
+          family_preference: "abb_xt"
+      - role: lug kit
+        category: Accessory
+        quantity_formula: "1"
+        criteria:
+          parent_frame: "{main_breaker.frame}"    # resolved from frame selection above
+          accessory_type: "lug_kit"
+          wire_material: "cu_al"
+      - role: rotary handle
+        category: Accessory
+        quantity_formula: "1"
+        criteria:
+          parent_frame: "{main_breaker.frame}"
+          accessory_type: "rotary_handle"
+          mount: "door"
+          features: ["interlock", "padlock"]
+
+  # ---- Power distribution blocks -----------------------------------------
+  - invariant_id: power_distribution_block
+    description: >
+      One single-pole nVent UDx PDB per phase downstream of the main
+      disconnect. Three units (one per phase); high-MOCP 460 V panels
+      may run a two-bank split (6 units).
+    selection_lines:
+      - role: phase distribution block
+        category: PowerDistributionBlock
+        quantity_formula: "{mocp_amps} > 600 ? 6 : 3"
+        criteria:
+          poles: 1
+          amp_rating_min: "{mocp_amps} / 3"     # per-phase minimum
+          family_preference: "nvent_udx"
+
+  # ---- Grounding ---------------------------------------------------------
+  - invariant_id: ground_lug
+    description: Penn-Union LA-500-1 main GND landing. Always qty 1.
+    selection_lines:
+      - role: main ground lug
+        category: GroundLug
+        quantity_formula: "1"
+        criteria:
+          wire_size_range: "4 AWG - 500 MCM"
+          mount: "mechanical"
+          family_preference: "penn_union_la"
+
+  - invariant_id: ground_bar
+    description: Schneider PK12GTA 12-terminal ground bar for field-ground landings.
+    selection_lines:
+      - role: field ground bar
+        category: GroundBar
+        quantity_formula: "1"
+        criteria:
+          terminal_count: 12
+          family_preference: "schneider_pk_gta"
+
+  # ---- Control transformers ----------------------------------------------
+  - invariant_id: control_transformer_120vac
+    description: WEG CPTW3K0-GSC 3 kVA control-power transformer feeding 120 VAC bus.
+    selection_lines:
+      - role: 120 VAC control transformer
+        category: Transformer
+        quantity_formula: "1"
+        criteria:
+          va: 3000
+          primary_voltage: "{incoming_voltage.transformer_primary_tap}"
+          secondary_voltage: 120
+          family_preference: "weg_cptw"
+
+  - invariant_id: control_transformer_24vac
+    description: >
+      Schneider 9070T500D19 multi-tap 500 VA control transformer feeding
+      24 VAC bus, paired with 9070FSC23 finger-safe terminal cover.
+    selection_lines:
+      - role: 24 VAC control transformer
+        category: Transformer
+        quantity_formula: "1"
+        criteria:
+          va: 500
+          primary_voltage_taps: [208, 240, 277, 380, 480]
+          secondary_voltage: 24
+          family_preference: "schneider_9070t"
+      - role: terminal cover
+        category: Accessory
+        quantity_formula: "1"
+        criteria:
+          parent_frame: "{control_transformer_24vac.frame}"
+          accessory_type: "finger_safe_cover"
+
+  # ---- 24 VDC PSU --------------------------------------------------------
+  - invariant_id: control_24vdc_psu
+    description: WAGO 2587-2144 5 A 24 VDC base power supply (panel-wide 24 VDC rail).
+    selection_lines:
+      - role: 24 VDC PSU
+        category: PowerSupply
+        quantity_formula: "1"
+        criteria:
+          output_voltage: 24
+          output_current_amps: 5
+          input_voltage: 120
+          family_preference: "wago_epsitron"
+
+  # ---- UPS (conditional on RFQ) ------------------------------------------
+  - invariant_id: ups_and_battery
+    description: >
+      Phoenix Contact QUINT4-UPS 1 kVA + 2× QUINT 24 VDC 7 Ah AGM battery
+      modules for control-power ride-through.
+    condition: "{rfq_panel_options.ups} == true"
+    selection_lines:
+      - role: UPS module
+        category: UPS
+        quantity_formula: "1"
+        criteria:
+          va: 1000
+          dc_bus_voltage: 24
+          family_preference: "phoenix_quint4_ups"
+      - role: battery module
+        category: Battery
+        quantity_formula: "2"
+        criteria:
+          chemistry: "agm"
+          voltage: 24
+          capacity_ah: 7
+          family_preference: "phoenix_quint_battery"
+
+  # ---- Phase monitor -----------------------------------------------------
+  - invariant_id: phase_monitor_relay
+    description: >
+      Schneider Harmony RM22TRxx 3-phase voltage monitoring relay (phase
+      loss, sequence, undervoltage). Voltage-range variant set by incoming voltage.
+    selection_lines:
+      - role: phase monitor relay
+        category: Relay
+        quantity_formula: "1"
+        criteria:
+          relay_type: "phase_monitor"
+          voltage_range: "{incoming_voltage.phase_monitor_range}"
+          phases: 3
+          family_preference: "schneider_rm22tr"
+
+  # ---- Panel climate kit -------------------------------------------------
+  - invariant_id: panel_climate_kit
+    description: >
+      Finder four-piece panel-environment kit: thermostat + LED light +
+      filter fan + exhaust filter. Identical across all jobs.
+    selection_lines:
+      - role: panel thermostat
+        category: PanelTempControl
+        quantity_formula: "1"
+        criteria:
+          family_preference: "finder_7t"
+      - role: panel LED light
+        category: Lamp
+        quantity_formula: "1"
+        criteria:
+          mount: "panel_internal"
+          voltage_rating: 230   # voltage-tolerant LED, runs on 120 in our context
+          family_preference: "finder_7l"
+      - role: filter fan
+        category: PanelTempControl
+        quantity_formula: "1"
+        criteria:
+          voltage_rating: 120
+          family_preference: "finder_7f"
+      - role: exhaust filter
+        category: PanelTempControl
+        quantity_formula: "1"
+        criteria:
+          family_preference: "finder_7f"
+
+  # ---- Ethernet switch (conditional but ~always true) --------------------
+  - invariant_id: ethernet_switch
+    description: Phoenix Contact 2702324 FL Switch 2000 8-port managed industrial.
+    condition: "{rfq_panel_options.ethernet_switch} == true"
+    selection_lines:
+      - role: managed ethernet switch
+        category: Networking
+        quantity_formula: "1"
+        criteria:
+          ports: 8
+          managed: true
+          speed: "10_100"
+          family_preference: "phoenix_fl_switch_2000"
+
+  # ---- Door service receptacle -------------------------------------------
+  - invariant_id: door_service_receptacle
+    description: Phoenix HEAVYPORT combo conv outlet + RJ45 jack, door-mounted.
+    selection_lines:
+      - role: door service receptacle
+        category: Receptacle
+        quantity_formula: "1"
+        criteria:
+          outlet_type: "gfci_combo"
+          includes_rj45: true
+          mount: "door"
+          family_preference: "phoenix_heavyport"
+
+  # ---- Control-xfmr primary fuses (Class CC) -----------------------------
+  - invariant_id: cc_fuse_holder_and_primary_fuses
+    description: >
+      Class CC fused disconnect for control transformer primary protection.
+      Littelfuse LPSC0002Z 30 A 2-pole holder + KLDR time-delay fuses
+      (typically 15 A for the 3 kVA xfmr primary).
+    selection_lines:
+      - role: CC fuse holder
+        category: FuseHolder
+        quantity_formula: "1"
+        criteria:
+          fuse_class: "CC"
+          amp_rating: 30
+          poles: 2
+          body_style: "finger-safe"
+          family_preference: "littelfuse_lpsc"
+      - role: CC primary fuse (3 kVA xfmr)
+        category: Fuse
+        quantity_formula: "2"
+        criteria:
+          fuse_class: "CC"
+          amp_rating: 15
+          time_delay: true
+          family_preference: "littelfuse_kldr"
+
+  # ---- Spare fuse drawer -------------------------------------------------
+  - invariant_id: spare_fuse_drawer
+    description: WAGO 709-591 DIN-rail switchgear cabinet drawer for spare fuses.
+    selection_lines:
+      - role: spare fuse drawer
+        category: Accessory
+        quantity_formula: "1"
+        criteria:
+          accessory_type: "din_drawer"
+          family_preference: "wago_709"
+
+  # ---- Interposing relays (three coil voltages) --------------------------
+  - invariant_id: interposing_relays
+    description: >
+      Three-tier WAGO interposing-relay block. 788-515 is the workhorse
+      115 VAC relay; 857-304 (24 VDC) and 788-512 (24 VAC) cover the
+      secondary control buses.
+    selection_lines:
+      - role: 115 VAC interposing relay
+        category: Relay
+        quantity_formula: "14"          # near-flat across corpus; refine when IO map lands
+        criteria:
+          coil_voltage: 115
+          contacts: "2CO"
+          amp_rating: 8
+          family_preference: "wago_788_515"
+      - role: 24 VDC interposing relay
+        category: Relay
+        quantity_formula: "3"
+        criteria:
+          coil_voltage: 24
+          coil_type: "dc"
+          contacts: "1CO"
+          amp_rating: 6
+          family_preference: "wago_857_304"
+      - role: 24 VAC interposing relay
+        category: Relay
+        quantity_formula: "3"
+        criteria:
+          coil_voltage: 24
+          coil_type: "ac"
+          contacts: "2CO"
+          amp_rating: 8
+          family_preference: "wago_788_512"
+
+  # ---- Per-compressor door devices ---------------------------------------
+  - invariant_id: door_indicators_per_compressor
+    description: >
+      Per compressor: white pilot light (RUNNING), red pilot light (FAULT),
+      and a 2-position maintained selector switch. Pilot device family
+      (Schneider XB5/XB4 vs ABB CL2/M2SS) set by door_pilot_family slot.
+      Plus three Carolina Laser legend plates per compressor (one per device).
+    selection_lines:
+      - role: white pilot light (RUNNING)
+        category: Pilot
+        quantity_formula: "{compressor_count}"
+        criteria:
+          color: "white"
+          nema_config: "22mm"
+          voltage_rating: "{door_pilot_family.pilot_voltage}"
+          family_preference: "{door_pilot_family.pilot_family}"
+      - role: red pilot light (FAULT)
+        category: Pilot
+        quantity_formula: "{compressor_count}"
+        criteria:
+          color: "red"
+          nema_config: "22mm"
+          voltage_rating: "{door_pilot_family.pilot_voltage}"
+          family_preference: "{door_pilot_family.pilot_family}"
+      - role: selector switch (2-pos maintained)
+        category: SelectorSwitch
+        quantity_formula: "{compressor_count}"
+        criteria:
+          positions: 2
+          action: "maintained"
+          nema_config: "22mm"
+          family_preference: "{door_pilot_family.selector_family}"
+      - role: legend plate (3-line)
+        category: LegendPlate
+        quantity_formula: "{compressor_count} * 3"
+        criteria:
+          size: "22mm"
+          shape: "rectangular"
+          lines: 3
+          family_preference: "carolina_laser_1631"
+
+  # ---- 120 V control branch MCBs (UL1077) --------------------------------
+  - invariant_id: branch_circuit_breakers_120v
+    description: >
+      1-pole DIN-rail miniature circuit breakers (UL1077) protecting
+      120 VAC control branches. Family resolves from incoming_voltage slot
+      (Schneider M9F42xxx for 208 V, ABB ST201M for 460 V). 2A blanket-
+      protects interposing relay coils + sensor branches + fixed panel
+      devices; 6A protects per-compressor coil branches. UL1077 — does NOT
+      carry KAIC selector.
+    selection_lines:
+      - role: 2A control branch MCB
+        category: Breaker
+        quantity_formula: "{compressor_count} * 2 + 3"
+        criteria:
+          amp_rating: 2
+          poles: 1
+          voltage_rating: "{control_voltage_120vac}"
+          standard: "UL1077"
+          family_preference: "{branch_breaker_family}"
+      - role: 6A compressor-coil branch MCB
+        category: Breaker
+        quantity_formula: "{compressor_count}"
+        criteria:
+          amp_rating: 6
+          poles: 1
+          voltage_rating: "{control_voltage_120vac}"
+          standard: "UL1077"
+          family_preference: "{branch_breaker_family}"
+
+  # ---- Auxiliary mini-contactors -----------------------------------------
+  - invariant_id: auxiliary_mini_contactors
+    description: >
+      WEG CWCA0-31-00V18 mini-contactor (3 NO + 1 NC, 24 VDC coil) for
+      unloaders, oil heaters, and panel-internal interlock loads.
+    selection_lines:
+      - role: auxiliary mini-contactor
+        category: Contactor
+        quantity_formula: "3"             # corpus range 2-4; refine when load model lands
+        criteria:
+          coil_voltage: 24
+          coil_type: "dc"
+          contacts: "3NO_1NC"
+          amp_rating: 9
+          family_preference: "weg_cwca"
+
+  # ---- WAGO terminal block field (low-confidence quantities) -------------
+  - invariant_id: wago_terminal_block_field
+    description: >
+      WAGO terminal blocks, end stops, jumpers, and DIN rail. Quantities
+      are LOW-CONFIDENCE estimates per the corpus data rules; presence is
+      invariant.
+    selection_lines:
+      - role: end stop
+        category: TerminalBlock
+        quantity_formula: "10"
+        quantity_is_estimate: true
+        criteria:
+          block_type: "end_stop"
+          family_preference: "wago_249"
+      - role: triple-deck terminal (5.2 mm)
+        category: TerminalBlock
+        quantity_formula: "20"
+        quantity_is_estimate: true
+        criteria:
+          deck_count: 3
+          width_mm: 5.2
+          family_preference: "wago_2002_3"
+      - role: single-level terminal
+        category: TerminalBlock
+        quantity_formula: "20"
+        quantity_is_estimate: true
+        criteria:
+          deck_count: 1
+          family_preference: "wago_2002_1"
+      - role: ground terminal
+        category: TerminalBlock
+        quantity_formula: "10"
+        quantity_is_estimate: true
+        criteria:
+          block_type: "ground"
+          family_preference: "wago_2006"
+      - role: DIN rail (35 mm)
+        category: DinRail
+        quantity_formula: "2"
+        quantity_is_estimate: true
+        criteria:
+          width_mm: 35
+          family_preference: "wago_210"
+      - role: jumper bar
+        category: Accessory
+        quantity_formula: "10"
+        quantity_is_estimate: true
+        criteria:
+          accessory_type: "jumper_bar"
+          family_preference: "wago_788_113"
+
+
+# ===========================================================================
+# PANEL DOCUMENTATION — workflow/schema descriptors, no parts produced.
+# Kept here so the human-readable doctrine ships with the template, but
+# excluded from selection/BOM expansion.
+# ===========================================================================
+panel_documentation:
+
+  - doc_id: workbook_skeleton
+    text: >
+      Each job ships a single XLSX workbook with eight sheets: Panel Notes,
+      BOM, Clean BOM, Clean BOM & Pick List, IO - Control Panel, Load Calc,
+      Legend Plates, Categories.
+
+  - doc_id: bom_bar_convention
+    text: >
+      BOM rows delimited by a purple bar (FF8E7CC3, "NO MODS BELOW THIS LINE")
+      at top and a red bar (FFE06666, "DO NOT COPY TO SUBMITTAL BOM BELOW
+      THIS LINE") at bottom. Only rows strictly between the bars count.
+
+  - doc_id: tag_convention
+    text: >
+      Device tags follow <TYPE><PAGE><LINE>: 2-3 letter prefix (CB, FU, CR,
+      LT, SS, T, MTR, RECP, PDB, PWS, BAT, UPS, GND, …) + 4 digits where
+      first two = drawing page, last two = line on page.
+
+  - doc_id: bom_column_schema
+    text: >
+      BOM sheet uses a 13-column schema, header at row 9:
+      Tag | Part # | Description | Manufacturer | Qty | Category |
+      Price/Unit | Ext. Cost | PO# | PO Date | Ship Date | Total (mA) |
+      Weight (lb).
+
+  - doc_id: load_calc_sheet
+    text: >
+      Each workbook ships a Load Calc sheet listing per-compressor FLA,
+      transformer sizing, and Total FLA / MCA / MOCP — which drives main
+      breaker selection.
+
+  - doc_id: legend_plates_sheet
+    text: >
+      A Legend Plates sheet enumerates door-device labels in 3-line text,
+      one row per device, referencing drawing page + bulkhead position.
+
+  - doc_id: proposal_lead_time
+    text: Standard proposal lead time = 4-6 weeks from PO receipt.
+
+# End of panel-template-v3.yaml
