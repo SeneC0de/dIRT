@@ -3,7 +3,7 @@
 Run from anywhere inside a project repo containing project.json (CLI walks up to find it),
 or pass --project. All output is JSON to stdout.
 """
-import argparse, json, sys
+import argparse, json, os, sys, urllib.error, urllib.request
 from pathlib import Path
 
 # Resolve firestore_db.py — it lives next to this script at the director-pattern repo root.
@@ -948,6 +948,145 @@ def cmd_mark_tested(args):
     sys.exit(result.returncode)
 
 
+# ---------------------------------------------------------------------------
+# dERP HTTP helpers — stdlib only (mirrors scripts/seed_e1404.py pattern).
+# ---------------------------------------------------------------------------
+
+_DERP_DEFAULT_BASE_URL = "http://localhost:5180"
+
+
+def _derp_base_url(cli_value=None):
+    """Resolve dERP base URL: --base-url > $DERP_BASE_URL > default."""
+    if cli_value:
+        return cli_value
+    return os.environ.get("DERP_BASE_URL", _DERP_DEFAULT_BASE_URL)
+
+
+def _derp_auth_headers():
+    """Optional auth headers from env — absent in local passthrough, required for Cloud Run."""
+    headers = {}
+    api_key = os.environ.get("DERP_API_KEY")
+    if api_key:
+        headers["X-Api-Key"] = api_key
+    bearer = os.environ.get("DERP_BEARER_TOKEN")
+    if bearer:
+        headers["Authorization"] = f"Bearer {bearer}"
+    return headers
+
+
+def _derp_send(req):
+    """Send a urllib Request; return {status, body(parsed-or-text)}.
+
+    HTTPError bodies are captured, not raised. Connection failures return
+    status 0 with a descriptive message so callers report cleanly."""
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            raw = resp.read().decode("utf-8")
+            try:
+                body = json.loads(raw) if raw.strip() else None
+            except json.JSONDecodeError:
+                body = raw
+            return {"status": resp.status, "body": body}
+    except urllib.error.HTTPError as e:
+        raw = e.read().decode("utf-8", errors="replace")
+        try:
+            body = json.loads(raw) if raw.strip() else raw
+        except json.JSONDecodeError:
+            body = raw
+        return {"status": e.code, "body": body}
+    except urllib.error.URLError as e:
+        return {"status": 0, "body": f"connection failed: {e.reason}"}
+    except (TimeoutError, OSError) as e:
+        return {"status": 0, "body": f"connection failed: {e}"}
+
+
+def _derp_get_project_id_by_enumber(base_url, enumber):
+    """Look up project GUID via GET /api/project/projects/by-enumber/{eNumber}.
+
+    Returns (project_id_str, None) on success, or (None, error_msg) on failure.
+    The response is ProjectFullDto: { project: { id: <guid>, ... }, panels: [...] }
+    """
+    url = base_url.rstrip("/") + f"/api/project/projects/by-enumber/{enumber}"
+    headers = {"Accept": "application/json"}
+    headers.update(_derp_auth_headers())
+    req = urllib.request.Request(url, headers=headers, method="GET")
+    res = _derp_send(req)
+    if res["status"] == 0:
+        return None, res["body"]
+    if res["status"] == 404:
+        return None, f"E-number {enumber!r} not found in dERP (404)"
+    if res["status"] != 200:
+        return None, f"dERP returned HTTP {res['status']}: {res['body']}"
+    body = res["body"]
+    if not isinstance(body, dict):
+        return None, f"unexpected response body (not JSON object): {body!r}"
+    project_block = body.get("project")
+    if not isinstance(project_block, dict):
+        return None, f"response has no 'project' block: {body!r}"
+    project_id = project_block.get("id")
+    if not project_id:
+        return None, f"'project.id' missing from response: {project_block!r}"
+    return str(project_id), None
+
+
+def cmd_delete_panel(args):
+    """Delete a panel from a dERP project via DELETE /api/projects/{projectId}/panels/{panelId}.
+
+    Resolves --enumber to a project GUID via GET /api/project/projects/by-enumber/{eNumber}
+    (ADR-0029) unless --project-id is supplied directly.
+    On 204 success, emits a panel_deleted audit event and prints the result.
+    """
+    base_url = _derp_base_url(getattr(args, "base_url", None))
+    panel_id = args.panel_id
+
+    # Resolve project GUID.
+    if getattr(args, "project_id", None):
+        project_id = args.project_id
+        enumber = None
+    else:
+        enumber = args.enumber
+        project_id, err = _derp_get_project_id_by_enumber(base_url, enumber)
+        if project_id is None:
+            sys.exit(f"delete-panel: could not resolve project GUID — {err}")
+
+    # DELETE /api/projects/{projectId}/panels/{panelId}
+    url = base_url.rstrip("/") + f"/api/projects/{project_id}/panels/{panel_id}"
+    headers = {"Accept": "application/json"}
+    headers.update(_derp_auth_headers())
+    req = urllib.request.Request(url, headers=headers, method="DELETE")
+    res = _derp_send(req)
+
+    if res["status"] == 0:
+        sys.exit(f"delete-panel: {res['body']}")
+
+    if res["status"] == 404:
+        sys.exit(f"delete-panel: panel {panel_id!r} not found on project {project_id!r} (404)")
+
+    if res["status"] != 204:
+        sys.exit(
+            f"delete-panel: dERP returned HTTP {res['status']}: {res['body']}"
+        )
+
+    # 204 success — emit audit event.
+    payload_dict = {"panel_id": panel_id, "project_id": project_id}
+    if enumber:
+        payload_dict["enumber"] = enumber
+    try:
+        did = resolve_project(getattr(args, "project", None))
+        eid = db.add_event(
+            did,
+            "panel_deleted",
+            user=_current_user(),
+            payload=json.dumps(payload_dict),
+        )
+        out({"ok": True, "panel_id": panel_id, "project_id": project_id,
+             "enumber": enumber, "event_id": eid})
+    except Exception as exc:  # noqa: BLE001 — event is best-effort; delete already happened
+        out({"ok": True, "panel_id": panel_id, "project_id": project_id,
+             "enumber": enumber, "event_id": None,
+             "audit_warning": f"panel deleted but event write failed: {exc}"})
+
+
 def main():
     p = argparse.ArgumentParser(description="Firestore-backed agent control CLI")
     p.add_argument("--project", default=None,
@@ -1260,6 +1399,39 @@ def main():
                          "not just the current project. Issues one query per project and merges results "
                          "sorted by timestamp descending.")
     sp.set_defaults(func=cmd_recent_events)
+
+    # ----- dERP panel management -----
+    sp = sub.add_parser(
+        "delete-panel",
+        help="Hard-delete a panel from a dERP project. "
+             "Calls DELETE /api/projects/{projectId}/panels/{panelId} on dERP.",
+    )
+    _enumber_group = sp.add_mutually_exclusive_group(required=True)
+    _enumber_group.add_argument(
+        "--enumber",
+        default=None,
+        help="Project E-number (e.g. E1498). Resolved to a project GUID via "
+             "GET /api/project/projects/by-enumber/{eNumber} (ADR-0029).",
+    )
+    _enumber_group.add_argument(
+        "--project-id",
+        dest="project_id",
+        default=None,
+        help="dERP project GUID. Use instead of --enumber when you already have the GUID.",
+    )
+    sp.add_argument(
+        "--panel-id",
+        dest="panel_id",
+        required=True,
+        help="dERP panel GUID to delete.",
+    )
+    sp.add_argument(
+        "--base-url",
+        dest="base_url",
+        default=None,
+        help=f"dERP base URL. Overrides $DERP_BASE_URL. Default: {_DERP_DEFAULT_BASE_URL}",
+    )
+    sp.set_defaults(func=cmd_delete_panel)
 
     args = p.parse_args()
     args.func(args)
